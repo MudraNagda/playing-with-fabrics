@@ -15,7 +15,11 @@ Every vertical warp and horizontal weft thread is its own physics line rendered 
 - `+ stripe` duplicates the selected stripe; `remove` deletes it.
 - `Share link` copies a URL with the whole sett encoded in it, so nothing is stored anywhere.
 
-Presets in the top right give you a starting point: the original Chennai swatch, an indigo check, and a red and navy "bleeding madras".
+**Zoom** with the − / + control in the top left, the + and − keys, or ctrl + scroll, from 60% to 400%. Zooming in shows the individual threads of the weave.
+
+**Wrap me** in the top right lifts the whole cloth off the screen and folds it, edges first, into a garment draped on a sketched figure. For now the only garment is a scarf; more will be shuffled in later. "Back to the loom" returns you to the editor.
+
+Presets in the top right of the panel give you a starting point: the original Chennai swatch, an indigo check, and a red and navy "bleeding madras".
 
 ## Running
 
