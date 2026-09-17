@@ -11,11 +11,11 @@
   }
   :root[data-theme="dark"] { --bg: #1d1b18; --ink: #a39d8f; --shadow: rgba(0, 0, 0, .5); }
   html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); }
-  body { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;
-         font: 12px/1.4 system-ui, -apple-system, sans-serif; gap: 12px; padding: 24px 0; box-sizing: border-box; }
-  .wrap { position: relative; width: min(658px, 100vw); aspect-ratio: 658 / 687; box-shadow: 0 18px 40px -20px var(--shadow); }
+  body { overflow: hidden; font: 12px/1.4 system-ui, -apple-system, sans-serif; }
+  .wrap { position: fixed; inset: 0; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-  p { margin: 0; opacity: .75; letter-spacing: .04em; text-transform: lowercase; }
+  p { position: fixed; left: 0; right: 0; bottom: 14px; margin: 0; text-align: center; color: #fff; opacity: .8;
+      letter-spacing: .04em; text-transform: lowercase; text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; }
 </style>
 </head>
 <body>
@@ -24,11 +24,11 @@
 <script>
 (() => {
   // ---------- fabric geometry ----------
-  const W = 658, H = 687;            // size of the original swatch, CSS px
+  let W = 0, H = 0;                  // viewport size, CSS px (set in build)
   const PITCH = 2;                   // distance between neighbouring threads
   const SEG = 10;                    // physics node spacing along each thread
   const PERIOD = 110;                // warp (vertical stripe) repeat
-  const SEAMS = [105, 215, 325, 435, 545]; // stitched pleat lines
+  const SEAM0 = 105, SEAM_EVERY = 110;     // stitched pleat lines repeat across the width
 
   // ---------- physics ----------
   const K = 40;        // spring back to rest
@@ -59,9 +59,7 @@
 
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const cv = document.getElementById('c');
-  cv.width = W * dpr; cv.height = H * dpr;
   const ctx = cv.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   let seed = 20240906;
   const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
@@ -78,11 +76,18 @@
     for (const [h, col] of bands) { a += h; if (pos < a) return col; }
     return bands[bands.length - 1][1];
   }
-  const nearSeam = x => SEAMS.some(s => Math.abs(x - s) < 7);
+  const seamsIn = w => { const out = []; for (let x = SEAM0; x < w; x += SEAM_EVERY) out.push(x); return out; };
+  const nearSeam = x => { const m = ((x - SEAM0) % SEAM_EVERY + SEAM_EVERY) % SEAM_EVERY; return m < 7 || m > SEAM_EVERY - 7; };
+  const WEFT_PERIOD = WEFT.reduce((a, b) => a + b[0], 0);
 
-  // ---------- threads ----------
+  // ---------- threads (rebuilt whenever the viewport changes) ----------
+  let warps = [], wefts = [], grain, seams;
+  function build() {
+  W = Math.max(1, Math.round(window.innerWidth)); H = Math.max(1, Math.round(window.innerHeight));
+  cv.width = W * dpr; cv.height = H * dpr;
+  seed = 20240906;
   const NPW = Math.floor(H / SEG) + 2, NPF = Math.floor(W / SEG) + 2;
-  const warps = [], wefts = [];
+  warps = []; wefts = [];
   for (let i = 0, x = PITCH / 2; x < W; i++, x += PITCH) {
     warps.push({
       pos: x, color: rgb(linen(hex(bandAt(WARP, x % PERIOD)))),
@@ -95,14 +100,14 @@
     const stiff = new Float32Array(NPF);
     for (let k = 0; k < NPF; k++) stiff[k] = nearSeam(k * SEG) ? 6 : 1;
     wefts.push({
-      pos: y, color: rgb(linen(hex(bandAt(WEFT, y)))),
+      pos: y, color: rgb(linen(hex(bandAt(WEFT, y % WEFT_PERIOD)))),
       width: PITCH * (1.05 + rnd() * 0.25),
       d: new Float32Array(NPF), v: new Float32Array(NPF), n: NPF, stiff,
     });
   }
 
   // ---------- static overlays: linen grain + pleat seams ----------
-  const grain = document.createElement('canvas');
+  grain = document.createElement('canvas');
   grain.width = W * dpr; grain.height = H * dpr;
   {
     const g = grain.getContext('2d');
@@ -111,18 +116,18 @@
     g.putImageData(img, 0, 0);
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.lineWidth = 1.2;
-    for (let i = 0; i < 1200; i++) {              // slubs: short lighter / darker fibres
+    for (let i = 0, n = W * H / 380; i < n; i++) { // slubs: short lighter / darker fibres
       const x = rnd() * W, y = rnd() * H, l = 6 + rnd() * 40, vert = rnd() < 0.4;
       g.strokeStyle = rnd() < 0.5 ? 'rgba(235,235,235,.55)' : 'rgba(40,40,40,.4)';
       g.beginPath(); g.moveTo(x, y); vert ? g.lineTo(x, y + l) : g.lineTo(x + l, y); g.stroke();
     }
   }
-  const seams = document.createElement('canvas');
+  seams = document.createElement('canvas');
   seams.width = W * dpr; seams.height = H * dpr;
   {
     const g = seams.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (const s of SEAMS) {
+    for (const s of seamsIn(W)) {
       let gr = g.createLinearGradient(s - 18, 0, s, 0);
       gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.16)');
       g.fillStyle = gr; g.fillRect(s - 18, 0, 18, H);
@@ -132,6 +137,10 @@
       g.fillStyle = gr; g.fillRect(s + 1, 0, 8, H);
     }
   }
+  }
+  build();
+  let resizeTimer = 0;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(build, 120); });
 
   // ---------- pointer ----------
   const mouse = { x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, on: false };
