@@ -362,11 +362,16 @@
   const ease = p => p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
 
   // centreline of the garment as a polyline, resampled by arc length
+  // the figure: a pencil sketch, sized from the head radius r and head centre (hx, hy)
+  function figureFrame(sw, sh) {
+    const r = Math.min(sh * 0.058, sw * 0.07);
+    return { r, hx: sw / 2, hy: sh * 0.17 };
+  }
+  // centreline of the scarf as a polyline, resampled by arc length
   function scarfPath(sw, sh) {
-    const r = Math.min(sh, sw) * 0.075, hx = sw / 2, hy = sh * 0.24;      // head radius & centre
-    const ctrl = [[hx - 1.5 * r, hy + 6.8 * r], [hx - 1.6 * r, hy + 4.2 * r], [hx - 1.55 * r, hy + 2.4 * r], [hx - 1.15 * r, hy + 1.35 * r],
-                  [hx, hy + 1.0 * r], [hx + 1.15 * r, hy + 1.35 * r], [hx + 1.6 * r, hy + 2.6 * r], [hx + 1.75 * r, hy + 4.6 * r], [hx + 1.45 * r, hy + 7.2 * r]];
-    // Catmull-Rom through the control points
+    const { r, hx, hy } = figureFrame(sw, sh);
+    const ctrl = [[-1.35, 6.4], [-1.45, 4.4], [-1.3, 2.6], [-0.95, 1.55], [0, 1.2], [0.95, 1.55], [1.3, 2.7], [1.5, 4.6], [1.25, 6.6]]
+      .map(([x, y]) => [hx + x * r, hy + y * r]);
     const pts = [];
     for (let i = 0; i < ctrl.length - 1; i++) {
       const p0 = ctrl[Math.max(0, i - 1)], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[Math.min(ctrl.length - 1, i + 2)];
@@ -387,9 +392,8 @@
       const dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1], d = Math.hypot(dx, dy) || 1;
       return [x, y, -dy / d, dx / d];
     };
-    // the stretch that passes behind the neck, as fractions of the length
-    const backAt = k => cum[Math.min(cum.length - 1, k * 24)] / L;
-    return { at, L, width: r * 1.45, back0: backAt(3) + 0.02, back1: backAt(5) - 0.02, r, hx, hy };
+    const backAt = k => cum[Math.min(cum.length - 1, k * 24)] / L;   // the stretch that passes behind the neck
+    return { at, L, width: r * 1.35, back0: backAt(3) + 0.02, back1: backAt(5) - 0.02, r, hx, hy };
   }
 
   function startWrap() {
@@ -399,15 +403,20 @@
     const garment = GARMENTS[Math.floor(Math.random() * GARMENTS.length)];
     const path = scarfPath(sw, sh);
     const cols = 56, rows = 6, verts = [];
+    // stage 1 folds the cloth into a straight strip lying across the shoulders; stage 2 drapes that strip along the path
+    const stripY = path.hy + 1.3 * path.r, stripX0 = path.hx - path.L / 2;
     for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) {
       const u = i / cols, v = j / rows;
       const [x, y, nx, ny] = path.at(u * path.L);
-      const flare = 1 + 0.25 * Math.max(0, 1 - Math.min(u, 1 - u) * 8);   // ends hang a little wider
-      const edge = Math.min(u, 1 - u, v, 1 - v) * 2;                        // 0 at the cloth's edge, 1 at its centre
-      verts.push({ u, v, fx: u * sw, fy: v * sh, tx: x + nx * (v - 0.5) * path.width * flare, ty: y + ny * (v - 0.5) * path.width * flare,
-                   delay: 0.55 * edge, lift: 30 + 50 * (1 - edge) });
+      const flare = 1 + 0.2 * Math.max(0, 1 - Math.min(u, 1 - u) * 8);   // ends hang a little wider
+      const edge = Math.min(u, 1 - u, v, 1 - v) * 2;                       // 0 at the cloth's edge, 1 at its centre
+      verts.push({ u, v,
+        fx: u * sw, fy: v * sh,                                                          // flat, filling the screen
+        sx: stripX0 + u * path.L, sy: stripY + (v - 0.5) * path.width,                  // folded strip
+        tx: x + nx * (v - 0.5) * path.width * flare, ty: y + ny * (v - 0.5) * path.width * flare,   // draped
+        foldDelay: 0.5 * edge, drapeDelay: 0.55 * Math.abs(u - 0.5) * 2 });
     }
-    wrap = { tex, t0: performance.now(), dur: 2600, garment, verts, cols, rows, sw, sh, path };
+    wrap = { tex, t0: performance.now(), dur: 3400, garment, verts, cols, rows, sw, sh, path };
     mode = 'wrap'; mouse.on = false;
     document.body.classList.add('wrapped');
     $('wrapme').textContent = 'back to the loom';
@@ -443,24 +452,49 @@
     ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.lineTo(d.x, d.y); ctx.closePath(); ctx.stroke();
   }
 
+  // pencil sketch of the figure: no face, just two oval eyes that blink once every ten seconds
   function drawFigure(p, path) {
-    const { r, hx, hy } = path, sh = wrap.sh;
+    const { r, hx, hy } = path;
+    const P = (x, y) => [hx + x * r, hy + y * r];
+    const line = (pts, close) => {
+      ctx.beginPath(); ctx.moveTo(...P(...pts[0]));
+      for (let i = 1; i < pts.length; i++) {
+        const q = pts[i];   // [cx, cy, x, y] is a curve through control (cx, cy) to (x, y); [x, y] is a straight segment
+        if (q.length === 4) ctx.quadraticCurveTo(...P(q[0], q[1]), ...P(q[2], q[3]));
+        else ctx.lineTo(...P(q[0], q[1]));
+      }
+      if (close) ctx.closePath();
+    };
     ctx.save(); ctx.globalAlpha = p;
-    ctx.fillStyle = '#efe9dc'; ctx.strokeStyle = 'rgba(70,55,40,.75)'; ctx.lineWidth = 2; ctx.lineJoin = 'round';
-    // torso and shoulders
-    ctx.beginPath();
-    ctx.moveTo(hx - 0.55 * r, hy + 1.2 * r);
-    ctx.quadraticCurveTo(hx - 2.2 * r, hy + 1.6 * r, hx - 2.6 * r, hy + 3.2 * r);
-    ctx.lineTo(hx - 2.4 * r, sh + 10); ctx.lineTo(hx + 2.4 * r, sh + 10);
-    ctx.lineTo(hx + 2.6 * r, hy + 3.2 * r);
-    ctx.quadraticCurveTo(hx + 2.2 * r, hy + 1.6 * r, hx + 0.55 * r, hy + 1.2 * r);
-    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.fillStyle = '#efe9dc';
+    const pencil = (w, a) => { ctx.strokeStyle = `rgba(70,60,55,${a})`; ctx.lineWidth = w; };
+    // legs: standing, one crossed slightly in front
+    pencil(1.6, .75);
+    line([[-0.55, 4.2], [-0.75, 6.3, -0.7, 8.6], [-0.7, 8.6], [-1.05, 8.75]]); ctx.stroke();   // back leg
+    line([[-0.15, 4.4], [-0.35, 6.4, -0.3, 8.6], [-0.3, 8.6], [-0.65, 8.75]]); ctx.stroke();
+    line([[0.55, 4.2], [0.75, 6.2, 0.35, 8.7], [0.35, 8.7], [0.75, 8.85]]); ctx.stroke();      // front leg
+    line([[0.15, 4.4], [0.35, 6.4, -0.05, 8.7]]); ctx.stroke();
+    // torso: a soft bean, filled so the scarf's back stretch hides behind it
+    line([[-0.6, 1.45], [-1.05, 2.4, -0.85, 3.4], [-0.85, 3.4], [-0.75, 4.1, 0, 4.35], [0, 4.35], [0.8, 4.1, 0.9, 3.3], [0.9, 3.3], [1.0, 2.3, 0.6, 1.45]], true);
+    ctx.fill(); pencil(1.6, .8); ctx.stroke();
+    // arm on the hip
+    line([[0.75, 1.7], [1.7, 2.2, 1.65, 2.9], [1.65, 2.9], [1.5, 3.5, 0.9, 3.55]]); ctx.stroke();
+    line([[0.8, 2.05], [1.35, 2.4, 1.3, 2.9], [1.3, 2.9], [1.2, 3.2, 0.9, 3.3]]); ctx.stroke();
+    // arm hanging down
+    line([[-0.85, 1.75], [-1.4, 2.8, -1.55, 4.3], [-1.55, 4.3], [-1.75, 4.55]]); ctx.stroke();
+    line([[-0.7, 2.3], [-1.05, 3.0, -1.25, 4.3], [-1.25, 4.3], [-1.4, 4.6]]); ctx.stroke();
     // neck
-    ctx.beginPath(); ctx.rect(hx - 0.42 * r, hy + 0.7 * r, 0.84 * r, 0.7 * r); ctx.fill();
-    ctx.beginPath(); ctx.moveTo(hx - 0.42 * r, hy + 0.7 * r); ctx.lineTo(hx - 0.42 * r, hy + 1.3 * r);
-    ctx.moveTo(hx + 0.42 * r, hy + 0.7 * r); ctx.lineTo(hx + 0.42 * r, hy + 1.3 * r); ctx.stroke();
-    // head
-    ctx.beginPath(); ctx.ellipse(hx, hy, 0.85 * r, r, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    line([[-0.22, 0.95], [-0.28, 1.45]]); ctx.stroke(); line([[0.22, 0.95], [0.28, 1.45]]); ctx.stroke();
+    // head, slightly egg-shaped, with a sweep of hair
+    ctx.beginPath(); ctx.ellipse(hx, hy, 0.86 * r, r, -0.08, 0, Math.PI * 2); ctx.fill(); pencil(1.7, .85); ctx.stroke();
+    pencil(1.5, .7);
+    line([[-0.9, -0.15], [-0.6, -1.25, 0.35, -1.05], [0.35, -1.05], [0.9, -0.95, 1.25, -0.55]]); ctx.stroke();   // hair line
+    line([[-0.55, -0.55], [0.2, -0.75, 0.75, -0.35]]); ctx.stroke();                                          // fringe
+    // eyes: two upright ovals; a blink squashes them for 140 ms once every 10 s
+    const cycle = performance.now() % 10000, blink = cycle < 140 ? Math.sin(cycle / 140 * Math.PI) : 0;
+    const eh = 0.16 * r * (1 - 0.92 * blink), ew = 0.085 * r;
+    ctx.fillStyle = 'rgba(60,50,45,.9)';
+    for (const ex of [-0.28, 0.3]) { ctx.beginPath(); ctx.ellipse(hx + ex * r, hy + 0.08 * r, ew, Math.max(0.6, eh), 0, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   }
 
@@ -470,12 +504,14 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.fillStyle = '#e6e0d2'; ctx.fillRect(0, 0, sw, sh);
-    // move every vertex from its flat position toward the garment, edges first
+    // stage 1 (t 0 .. 0.5): fold from the edges into a strip.  stage 2 (0.5 .. 1): drape from the middle outward
+    const tA = clamp(t / 0.5, 0, 1), tB = clamp((t - 0.5) / 0.5, 0, 1);
     const P = [];
     for (const vt of verts) {
-      const p = ease(clamp((t - vt.delay) / 0.45, 0, 1));
-      P.push({ x: vt.fx + (vt.tx - vt.fx) * p, y: vt.fy + (vt.ty - vt.fy) * p - Math.sin(p * Math.PI) * vt.lift,
-               tu: vt.u * tex.width, tv: vt.v * tex.height });
+      const a = ease(clamp((tA - vt.foldDelay) / 0.5, 0, 1));
+      const b = ease(clamp((tB - vt.drapeDelay) / 0.45, 0, 1));
+      const x1 = vt.fx + (vt.sx - vt.fx) * a, y1 = vt.fy + (vt.sy - vt.fy) * a - Math.sin(a * Math.PI) * 24;
+      P.push({ x: x1 + (vt.tx - x1) * b, y: y1 + (vt.ty - y1) * b + Math.sin(b * Math.PI) * 10, tu: vt.u * tex.width, tv: vt.v * tex.height });
     }
     const drawCols = pred => {
       for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
@@ -485,7 +521,7 @@
       }
     };
     const { back0, back1 } = w.path;
-    const figureIn = ease(clamp((t - 0.25) / 0.45, 0, 1));
+    const figureIn = ease(clamp((t - 0.42) / 0.3, 0, 1));
     drawCols(u => u > back0 && u < back1);      // the stretch behind the neck
     drawFigure(figureIn, w.path);
     drawCols(u => u <= back0 || u >= back1);    // the ends that hang in front
