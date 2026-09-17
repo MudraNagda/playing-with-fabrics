@@ -17,7 +17,7 @@ Every vertical warp and horizontal weft thread is its own physics line rendered 
 
 **Zoom** with the − / + control in the top left, the + and − keys, or ctrl + scroll, from 60% to 400%. Zooming in shows the individual threads of the weave.
 
-**Wrap me** in the top right lifts the whole cloth off the screen and folds it, edges first, into a garment draped on a pencil-sketched figure. The cloth folds edge-first into a straight strip across the shoulders, then drapes from the middle outward. The figure has no face, only two oval eyes that blink once every ten seconds. For now the only garment is a scarf; more will be shuffled in later. "Back to the loom" returns you to the editor.
+**Wrap me** in the top right lifts the whole cloth off the screen and folds it, edges first, into a garment draped on a pencil-sketched figure. The cloth zooms out a touch, its left edge gathers into a rope and leads the whole cloth around the screen like the snake game (south, east, north, then west along the top), lands as a strip across the shoulders, and drapes from the middle outward. The figure has no face, only two oval eyes that blink once every ten seconds. For now the only garment is a scarf; more will be shuffled in later. "Back to the loom" returns you to the editor.
 
 Presets in the top right of the panel give you a starting point: the original Chennai swatch, an indigo check, and a red and navy "bleeding madras".
 
