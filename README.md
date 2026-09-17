@@ -8,7 +8,7 @@ Small experiments in simulating cloth in the browser. Each folder is one standal
 
 Every vertical warp and horizontal weft thread is its own physics line rendered as a plain weave. Hover to part the threads, click to pluck them, and they spring back with tension and damping while a faint breeze keeps the cloth swaying at rest. Threads near the stitched pleat seams are stiffer.
 
-**Design your own.** The wooden panel at the bottom is the loom's warp beam, with the sett wound onto it: the sequence of colours and thread counts that a weaver winds onto the warp beam. The same sett runs across and down, which is what makes a madras check.
+**Design your own.** The wooden bar along the bottom is the loom's warp beam. The sett is wound onto it at the cloth's own scale, repeat after repeat, so every stripe on the beam sits directly below the same stripe in the cloth and is exactly as wide. Zooming the cloth zooms the beam with it. The sett is the sequence of colours and thread counts that a weaver winds onto the warp beam. The same sett runs across and down, which is what makes a madras check.
 
 - Tap a stripe, then tap a skein to dye it.
 - Drag a stripe's right edge to change its thread count. Shift + arrow keys do the same from the keyboard.
