@@ -62,50 +62,47 @@
   .skein:hover { transform: scale(1.12); border-color: #fff; }
   .skein:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  /* ---- paper tags and a brass plate for the controls ---- */
-  button.b { position: relative; background: var(--paper); color: var(--paper-ink); border: 1px solid #c9b78f; border-radius: 3px; padding: 6px 11px 6px 18px;
-      font: inherit; font-size: 12px; cursor: pointer; letter-spacing: .02em; box-shadow: 0 2px 3px rgba(0,0,0,.35); }
-  button.b::before { content: ""; position: absolute; left: 7px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%;
-      background: #8a6a2a; box-shadow: inset 0 0 0 1.5px #f3ead8; }
-  button.b:hover { background: #fbf4e4; }
+  /* ---- controls ---- */
+  button.b { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px;
+      font: inherit; font-size: 12px; cursor: pointer; letter-spacing: .02em; }
+  button.b:hover { border-color: rgba(255,255,255,.4); }
   button.b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  button.b:disabled { opacity: .4; cursor: default; }
-  button.b.primary { background: var(--brass); color: #2a1e08; border-color: #8a6a2a; font-weight: 600; padding-left: 11px;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 2px 3px rgba(0,0,0,.4); text-shadow: 0 1px 0 rgba(255,255,255,.35); }
-  button.b.primary::before { display: none; }
-  button.b.primary:hover { background: linear-gradient(180deg, #f6dc98, #d8b058 55%, #c19638); }
-  .preset { position: relative; padding: 3px; border-radius: 2px; border: 1px solid rgba(0,0,0,.35); background: var(--paper); cursor: pointer; display: flex; gap: 0;
-      box-shadow: 0 2px 3px rgba(0,0,0,.4); transform: rotate(-2deg); }
-  .preset:nth-child(2) { transform: rotate(1.5deg); } .preset:nth-child(3) { transform: rotate(-1deg); }
-  .preset::before { content: ""; position: absolute; left: 50%; top: -4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #ff8a7a, #b0261a); box-shadow: 0 1px 1px rgba(0,0,0,.5); }
-  .preset:hover { transform: rotate(0) scale(1.06); }
+  button.b:disabled { opacity: .35; cursor: default; }
+  button.b.primary { background: var(--accent); color: #2a2208; border-color: transparent; font-weight: 600; }
+  .preset { padding: 4px; border-radius: 6px; border: 1px solid var(--line); background: transparent; cursor: pointer; display: flex; gap: 0; overflow: hidden; }
+  .preset:hover { border-color: rgba(255,255,255,.4); }
   .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .preset span { display: block; width: 6px; height: 18px; }
-  .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--brass); color: #2a1e08; border: 1px solid #8a6a2a;
-      padding: 8px 14px; border-radius: 3px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--accent); color: #2a2208;
+      padding: 8px 14px; border-radius: 6px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 8; }
   .toast.show { opacity: 1; }
-  .corner { position: fixed; top: 12px; display: flex; align-items: center; gap: 4px; background: var(--wood); color: var(--ink);
-      border: 1px solid var(--wood-edge); border-radius: 4px; padding: 3px; box-shadow: inset 0 1px 0 rgba(255,225,180,.25), 0 4px 10px rgba(0,0,0,.35); }
-  .corner.left { left: 12px; } .corner.right { right: 12px; }
-  .corner button { background: transparent; color: var(--ink); border: 0; border-radius: 3px; width: 30px; height: 30px; font: inherit;
+  .corner { position: fixed; top: 12px; display: flex; align-items: center; gap: 4px; background: var(--panel); color: var(--ink);
+      border-radius: 999px; padding: 4px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .corner.left { left: 12px; } .corner.right { right: 12px; z-index: 7; }
+  .corner button { background: transparent; color: var(--ink); border: 0; border-radius: 999px; width: 30px; height: 30px; font: inherit;
       font-size: 16px; cursor: pointer; line-height: 1; }
   .corner button:hover { background: rgba(255,255,255,.12); }
   .corner button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .corner .z { min-width: 44px; text-align: center; font-size: 11px; letter-spacing: .06em; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .corner .wrapme { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: .04em; text-transform: lowercase; background: var(--brass); color: #2a1e08;
-      font-weight: 600; border: 1px solid #8a6a2a; box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
-  .corner .wrapme:hover { background: linear-gradient(180deg, #f6dc98, #d8b058 55%, #c19638); }
-  body.wrapped .panel, body.wrapped .hint, body.wrapped .corner.left { display: none; }
-  .card { position: fixed; box-sizing: border-box; padding: 16px 22px 18px; display: flex; flex-direction: column; gap: 6px; color: #2a2420;
-      opacity: 0; transition: opacity .35s; pointer-events: none; }
+  .corner .wrapme { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: .04em; text-transform: lowercase; background: var(--accent); color: #2a2208; font-weight: 600; }
+  .corner .wrapme:hover { background: #ffd95c; }
+  /* while wrapped: the loom stays on screen under a half-transparent veil, and the card is drawn on a canvas above it */
+  .veil { position: fixed; inset: 0; background: rgba(236,229,214,.5); display: none; z-index: 4; }
+  .top { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 5; }
+  body.wrapped .veil, body.wrapped .top { display: block; }
+  body.wrapped .panel, body.wrapped .hint, body.wrapped .corner.left { pointer-events: none; }
+  .card { position: fixed; box-sizing: border-box; padding: 14px 22px 18px; display: flex; flex-direction: column; gap: 6px; color: #2a2420;
+      opacity: 0; transition: opacity .35s; pointer-events: none; z-index: 6; }
   .card.show { opacity: 1; pointer-events: auto; }
   .card .eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #8a8272; }
   .card h2 { margin: 0; font: italic 500 22px/1.2 var(--serif); text-wrap: balance; }
   .card .sub { font-size: 12px; color: #6d675a; font-variant-numeric: tabular-nums; }
   .card .sett-strip { display: flex; height: 14px; border-radius: 3px; overflow: hidden; margin-top: 4px; border: 1px solid rgba(42,36,32,.4); }
   .card .sett-strip i { display: block; min-width: 1px; }
-  .card .actions { display: flex; gap: 8px; margin-top: auto; }
+  .card .actions { display: flex; gap: 8px; margin-top: 8px; }
+  .card .b { color: #2a2420; border-color: rgba(42,36,32,.35); }
+  .card .b:hover { border-color: rgba(42,36,32,.7); }
+  .card .b.primary { color: #2a2208; border-color: transparent; }
   @media (max-width: 720px) { .hint { top: 58px; white-space: nowrap; font-size: 11px; } }
   @media (max-width: 520px) { .row { padding: 0 16px; gap: 10px; } .panel { padding-bottom: 16px; } }
 </style>
@@ -143,6 +140,8 @@
   </div>
 </section>
 <div class="toast" id="toast">Link copied</div>
+<div class="veil"></div>
+<canvas class="top" id="top"></canvas>
 
 <script>
 (() => {
@@ -457,13 +456,16 @@
     g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x, b.y); g.lineTo(c.x, c.y); g.lineTo(d.x, d.y); g.closePath(); g.stroke();
   }
 
+  const top = document.getElementById('top'), tctx = top.getContext('2d');
   function startWrap() {
     const sw = cv.clientWidth || window.innerWidth, sh = cv.clientHeight || window.innerHeight;
     const tex = document.createElement('canvas'); tex.width = cv.width; tex.height = cv.height;
     tex.getContext('2d').drawImage(cv, 0, 0);
+    top.width = cv.width; top.height = cv.height;
     // the card, centred, and the folded scarf that will sit on it
-    const cw = Math.min(sw - 32, 380), ch = Math.min(sh - 32, cw * 1.32), cx0 = (sw - cw) / 2, cy0 = (sh - ch) / 2;
-    const pad = 20, passes = 4, gap = 1.25, w = (ch * 0.56) / (passes * gap), spacing = w * gap;
+    const cw = Math.min(sw - 32, 380), pad = 20, passes = 4, gap = 1.25, textH = 168;
+    const swatchH = Math.min(cw * 0.74, sh - 32 - pad - textH), ch = pad + swatchH + textH, cx0 = (sw - cw) / 2, cy0 = (sh - ch) / 2;
+    const w = swatchH / (passes * gap), spacing = w * gap;
     const px0 = cx0 + pad + w / 2, px1 = cx0 + cw - pad - w / 2;
     const zig = [];
     for (let k = 0; k < passes; k++) {
@@ -502,21 +504,33 @@
   $('wrapme').addEventListener('click', () => mode === 'loom' ? startWrap() : endWrap());
 
   function drawCard(alpha) {
-    const { x, y, w, h } = wrap.card;
-    ctx.save(); ctx.globalAlpha = alpha;
-    ctx.shadowColor = 'rgba(40,30,20,.35)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 18;
-    ctx.fillStyle = '#f6f2ea'; ctx.beginPath(); ctx.roundRect(x, y, w, h, 14); ctx.fill();
-    ctx.shadowColor = 'transparent';
-    ctx.strokeStyle = 'rgba(70,55,40,.18)'; ctx.lineWidth = 1; ctx.stroke();
-    ctx.restore();
+    const { x, y, w, h, pad, swatchH } = wrap.card, g = tctx;
+    g.save(); g.globalAlpha = alpha;
+    g.shadowColor = 'rgba(40,30,20,.35)'; g.shadowBlur = 40; g.shadowOffsetY = 18;
+    g.fillStyle = '#f6f2ea'; g.beginPath(); g.roundRect(x, y, w, h, 14); g.fill();
+    g.shadowColor = 'transparent';
+    // behind the scarf: a burst of diagonal candy stripes in the sett's own colours
+    g.save(); g.beginPath(); g.roundRect(x, y, w, h, 14); g.clip();
+    g.beginPath(); g.rect(x, y, w, pad + swatchH + 6); g.clip();
+    g.globalAlpha = alpha * 0.55; g.translate(x + w / 2, y + (pad + swatchH) / 2); g.rotate(-Math.PI / 5);
+    const band = 16, span = Math.hypot(w, pad + swatchH) + band * 2;
+    for (let i = 0, k = -span / 2; k < span / 2; i++, k += band) {
+      g.fillStyle = sett[i % sett.length].c; g.fillRect(k, -span, band, span * 2);
+    }
+    g.setTransform(dpr, 0, 0, dpr, 0, 0); g.globalAlpha = alpha;
+    const fade = g.createLinearGradient(0, y + pad + swatchH - 40, 0, y + pad + swatchH + 6);
+    fade.addColorStop(0, 'rgba(246,242,234,0)'); fade.addColorStop(1, 'rgba(246,242,234,1)');
+    g.fillStyle = fade; g.fillRect(x, y + pad + swatchH - 40, w, 46);
+    g.restore();
+    g.strokeStyle = 'rgba(70,55,40,.18)'; g.lineWidth = 1; g.beginPath(); g.roundRect(x, y, w, h, 14); g.stroke();
+    g.restore();
   }
 
   function drawWrap() {
     const w = wrap, t = Math.min(1, (performance.now() - w.t0) / w.dur);
     const { sw, sh, verts, cols, rows, tex, route, mx, my, lenFinal } = w;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
-    ctx.fillStyle = '#e6e0d2'; ctx.fillRect(0, 0, sw, sh);
+    tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.clearRect(0, 0, top.width, top.height);
+    tctx.setTransform(dpr, 0, 0, dpr, 0, 0); tctx.globalCompositeOperation = 'source-over'; tctx.globalAlpha = 1;
     // t 0 .. ZOOM: zoom out and gather the leading edge into a rope.  ZOOM .. 1: the run, ending folded on the card
     const ZOOM = 0.1, lerp = (a, b, k) => a + (b - a) * k;
     let headS, len, wide, front;
@@ -543,7 +557,7 @@
       quad(g, tex, P[k], P[k + 1], P[k + cols + 2], P[k + cols + 1]);
     }
     if (cardIn > 0) stickerEdge(cardIn);
-    ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(w.off, 0, 0); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.drawImage(w.off, 0, 0); tctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (t >= 1) $('card').classList.add('show');
   }
 
@@ -551,20 +565,20 @@
   function stickerEdge(alpha) {
     const { x, y, w: cw, h: ch } = wrap.card, R = 7 * dpr, margin = Math.ceil(R + 16 * dpr);
     const sx = Math.max(0, Math.floor(x * dpr) - margin), sy = Math.max(0, Math.floor(y * dpr) - margin);
-    const rw = Math.min(cv.width - sx, Math.ceil(cw * dpr) + 2 * margin), rh = Math.min(cv.height - sy, Math.ceil(ch * dpr) + 2 * margin);
+    const rw = Math.min(top.width - sx, Math.ceil(cw * dpr) + 2 * margin), rh = Math.min(top.height - sy, Math.ceil(ch * dpr) + 2 * margin);
     const g = wrap.sil.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0);
     g.globalCompositeOperation = 'source-over'; g.clearRect(sx, sy, rw, rh);
     g.drawImage(wrap.off, sx, sy, rw, rh, sx, sy, rw, rh);
     g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(sx, sy, rw, rh);
-    ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha;
-    ctx.shadowColor = 'rgba(40,30,20,.25)'; ctx.shadowBlur = 6 * dpr; ctx.shadowOffsetY = 2 * dpr;
-    ctx.drawImage(wrap.sil, sx, sy, rw, rh, sx, sy + R, rw, rh);      // one blit with a soft shadow beneath
-    ctx.shadowColor = 'transparent';
+    tctx.save(); tctx.setTransform(1, 0, 0, 1, 0, 0); tctx.globalAlpha = alpha;
+    tctx.shadowColor = 'rgba(40,30,20,.25)'; tctx.shadowBlur = 6 * dpr; tctx.shadowOffsetY = 2 * dpr;
+    tctx.drawImage(wrap.sil, sx, sy, rw, rh, sx, sy + R, rw, rh);      // one blit with a soft shadow beneath
+    tctx.shadowColor = 'transparent';
     for (let k = 0; k < 24; k++) {
       const a = k / 24 * Math.PI * 2;
-      ctx.drawImage(wrap.sil, sx, sy, rw, rh, sx + Math.cos(a) * R, sy + Math.sin(a) * R, rw, rh);
+      tctx.drawImage(wrap.sil, sx, sy, rw, rh, sx + Math.cos(a) * R, sy + Math.sin(a) * R, rw, rh);
     }
-    ctx.restore();
+    tctx.restore();
   }
 
   // ---------- sharing the card ----------
@@ -580,7 +594,8 @@
     const { x, y, w, h } = wrap.card, S = 2;
     const out = document.createElement('canvas'); out.width = w * S; out.height = h * S;
     const g = out.getContext('2d');
-    g.drawImage(cv, x * dpr, y * dpr, w * dpr, h * dpr, 0, 0, w * S, h * S);   // card + folded scarf as drawn on screen
+    g.fillStyle = '#f6f2ea'; g.fillRect(0, 0, w * S, h * S);
+    g.drawImage(top, x * dpr, y * dpr, w * dpr, h * dpr, 0, 0, w * S, h * S);   // card + folded scarf as drawn on screen
     g.setTransform(S, 0, 0, S, 0, 0);
     const top = wrap.card.pad + wrap.card.swatchH + 16, left = 22;
     g.fillStyle = '#8a8272'; g.font = '600 10px system-ui, sans-serif'; g.fillText('MADRAS  ·  SCARF', left, top + 4);
