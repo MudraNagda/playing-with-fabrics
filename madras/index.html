@@ -87,14 +87,13 @@
   .corner .wrapme { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: .04em; text-transform: lowercase; background: var(--accent); color: #2a2208; font-weight: 600; }
   .corner .wrapme:hover { background: #ffd95c; }
   /* while wrapped: the loom stays on screen under a half-transparent veil, and the card is drawn on a canvas above it */
-  .veil { position: fixed; inset: 0; background: rgba(236,229,214,.5); display: none; z-index: 4; }
+  .veil { position: fixed; inset: 0; background: rgba(236,229,214,.75); display: none; z-index: 4; }
   .top { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 5; }
   body.wrapped .veil, body.wrapped .top { display: block; }
   body.wrapped .panel, body.wrapped .hint, body.wrapped .corner.left { pointer-events: none; }
   .card { position: fixed; box-sizing: border-box; padding: 14px 22px 18px; display: flex; flex-direction: column; gap: 6px; color: #2a2420;
       opacity: 0; transition: opacity .35s; pointer-events: none; z-index: 6; }
   .card.show { opacity: 1; pointer-events: auto; }
-  .card .eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #8a8272; }
   .card h2 { margin: 0; font: italic 500 22px/1.2 var(--serif); text-wrap: balance; }
   .card .sub { font-size: 12px; color: #6d675a; font-variant-numeric: tabular-nums; }
   .card .sett-strip { display: flex; height: 14px; border-radius: 3px; overflow: hidden; margin-top: 4px; border: 1px solid rgba(42,36,32,.4); }
@@ -117,9 +116,7 @@
 </div>
 <div class="corner right"><button class="wrapme" id="wrapme">wrap me</button></div>
 <div class="card" id="card" aria-live="polite">
-  <div class="eyebrow">Madras · Scarf</div>
-  <h2>Woven thread by thread</h2>
-  <div class="sub" id="card-sub"></div>
+  <h2>Custom Madras Weave Scarf</h2>
   <div class="sett-strip" id="card-sett"></div>
   <div class="actions">
     <button class="b primary" id="card-share">Share</button>
@@ -463,7 +460,7 @@
     tex.getContext('2d').drawImage(cv, 0, 0);
     top.width = cv.width; top.height = cv.height;
     // the card, centred, and the folded scarf that will sit on it
-    const cw = Math.min(sw - 32, 380), pad = 20, passes = 4, gap = 1.25, textH = 168;
+    const cw = Math.min(sw - 32, 380), pad = 20, passes = 4, gap = 1.25, textH = 128;
     const swatchH = Math.min(cw * 0.74, sh - 32 - pad - textH), ch = pad + swatchH + textH, cx0 = (sw - cw) / 2, cy0 = (sh - ch) / 2;
     const w = swatchH / (passes * gap), spacing = w * gap;
     const px0 = cx0 + pad + w / 2, px1 = cx0 + cw - pad - w / 2;
@@ -492,7 +489,6 @@
     $('wrapme').textContent = 'back to the loom';
     const c = $('card');
     c.style.left = cx0 + 'px'; c.style.top = (cy0 + pad + passes * spacing) + 'px'; c.style.width = cw + 'px'; c.style.height = (ch - pad - passes * spacing) + 'px';
-    $('card-sub').textContent = `${sett.reduce((a, s) => a + s.n, 0)} threads per repeat · ${sett.length} stripes`;
     $('card-sett').innerHTML = sett.map(s => `<i style="background:${s.c};flex:${s.n}"></i>`).join('');
     c.classList.remove('show');
   }
@@ -512,7 +508,7 @@
     // behind the scarf: a burst of diagonal candy stripes in the sett's own colours
     g.save(); g.beginPath(); g.roundRect(x, y, w, h, 14); g.clip();
     g.beginPath(); g.rect(x, y, w, pad + swatchH + 6); g.clip();
-    g.globalAlpha = alpha * 0.55; g.translate(x + w / 2, y + (pad + swatchH) / 2); g.rotate(-Math.PI / 5);
+    g.globalAlpha = alpha * 0.25; g.translate(x + w / 2, y + (pad + swatchH) / 2); g.rotate(-Math.PI / 5);
     const band = 16, span = Math.hypot(w, pad + swatchH) + band * 2;
     for (let i = 0, k = -span / 2; k < span / 2; i++, k += band) {
       g.fillStyle = sett[i % sett.length].c; g.fillRect(k, -span, band, span * 2);
@@ -597,13 +593,11 @@
     g.fillStyle = '#f6f2ea'; g.fillRect(0, 0, w * S, h * S);
     g.drawImage(top, x * dpr, y * dpr, w * dpr, h * dpr, 0, 0, w * S, h * S);   // card + folded scarf as drawn on screen
     g.setTransform(S, 0, 0, S, 0, 0);
-    const top = wrap.card.pad + wrap.card.swatchH + 16, left = 22;
-    g.fillStyle = '#8a8272'; g.font = '600 10px system-ui, sans-serif'; g.fillText('MADRAS  ·  SCARF', left, top + 4);
-    g.fillStyle = '#2a2420'; g.font = '600 20px system-ui, sans-serif'; g.fillText('Woven thread by thread', left, top + 30);
-    g.fillStyle = '#6d675a'; g.font = '12px system-ui, sans-serif'; g.fillText($('card-sub').textContent, left, top + 50);
+    const ty = wrap.card.pad + wrap.card.swatchH + 14, left = 22;   // top of the text block
+    g.fillStyle = '#2a2420'; g.font = 'italic 500 22px Fraunces, "Iowan Old Style", Georgia, serif'; g.fillText('Custom Madras Weave Scarf', left, ty + 22);
     const total = sett.reduce((a, s) => a + s.n, 0); let sx = left;
-    for (const st of sett) { const bw = (w - 44) * st.n / total; g.fillStyle = st.c; g.fillRect(sx, top + 64, bw + 0.5, 14); sx += bw; }
-    g.strokeStyle = 'rgba(42,36,32,.4)'; g.lineWidth = 1; g.strokeRect(left + 0.5, top + 64.5, w - 44, 14);
+    for (const st of sett) { const bw = (w - 44) * st.n / total; g.fillStyle = st.c; g.fillRect(sx, ty + 38, bw + 0.5, 14); sx += bw; }
+    g.strokeStyle = 'rgba(42,36,32,.4)'; g.lineWidth = 1; g.strokeRect(left + 0.5, ty + 38.5, w - 44, 14);
     g.fillStyle = '#8a8272'; g.font = '10px system-ui, sans-serif'; g.fillText(location.host + location.pathname, left, h - 16);
     const a = document.createElement('a'); a.download = 'madras-scarf.png'; a.href = out.toDataURL('image/png'); a.click();
   });
