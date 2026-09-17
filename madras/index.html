@@ -5,29 +5,86 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Madras Weave</title>
 <style>
-  :root { --bg: #ebe7dd; --ink: #6d675a; --shadow: rgba(60, 45, 30, .18); }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) { --bg: #1d1b18; --ink: #a39d8f; --shadow: rgba(0, 0, 0, .5); }
-  }
-  :root[data-theme="dark"] { --bg: #1d1b18; --ink: #a39d8f; --shadow: rgba(0, 0, 0, .5); }
-  html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--ink); }
-  body { overflow: hidden; font: 12px/1.4 system-ui, -apple-system, sans-serif; }
+  :root { --panel: rgba(26, 22, 18, .86); --ink: #f1ebe0; --dim: #b9b09f; --line: rgba(255,255,255,.14); --accent: #f1c948; }
+  html, body { margin: 0; height: 100%; background: #d9d4c4; color: var(--ink); }
+  body { overflow: hidden; font: 13px/1.4 system-ui, -apple-system, sans-serif; }
   .wrap { position: fixed; inset: 0; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-  p { position: fixed; left: 0; right: 0; bottom: 14px; margin: 0; text-align: center; color: #fff; opacity: .8;
-      letter-spacing: .04em; text-transform: lowercase; text-shadow: 0 1px 3px rgba(0,0,0,.6); pointer-events: none; }
+  .hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 999px;
+      background: var(--panel); color: var(--ink); font-size: 12px; letter-spacing: .04em; pointer-events: none; }
+
+  /* ---- the beam: bottom panel ---- */
+  .panel { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(760px, calc(100vw - 24px));
+      background: var(--panel); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 10px;
+      box-shadow: 0 14px 40px -12px rgba(0,0,0,.6); padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+  .label b { color: var(--ink); font-weight: 600; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+  .spacer { flex: 1; }
+  #presets { display: flex; gap: 6px; align-items: center; }
+
+  .beam-wrap { overflow-x: auto; overflow-y: hidden; padding: 4px 0 20px; }
+  .beam { display: flex; height: 44px; border-radius: 4px; overflow: visible; min-width: max-content;
+      box-shadow: inset 0 0 0 1px var(--line); touch-action: none; }
+  .stripe { position: relative; height: 100%; min-width: 8px; cursor: pointer; flex: none; box-sizing: border-box; }
+  .stripe:first-child { border-radius: 4px 0 0 4px; } .stripe:last-child { border-radius: 0 4px 4px 0; }
+  .stripe.sel { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 2; border-radius: 2px; }
+  .stripe .n { position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: 10px; color: var(--dim);
+      font-variant-numeric: tabular-nums; pointer-events: none; opacity: 0; }
+  .stripe.sel .n { opacity: 1; }
+  .handle { position: absolute; top: -4px; bottom: -4px; right: -6px; width: 12px; cursor: ew-resize; z-index: 3; touch-action: none; }
+  .handle::after { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: rgba(255,255,255,.55); border-radius: 1px; opacity: 0; }
+  .stripe.sel .handle::after, .stripe:hover .handle::after { opacity: 1; }
+
+  .rack { display: flex; gap: 6px; flex-wrap: wrap; }
+  .skein { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); cursor: pointer; padding: 0;
+      box-shadow: inset 0 -4px 6px rgba(0,0,0,.25); transition: transform .12s; }
+  .skein:hover { transform: scale(1.12); border-color: #fff; }
+  .skein:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  button.b { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px;
+      font: inherit; font-size: 12px; cursor: pointer; letter-spacing: .02em; }
+  button.b:hover { border-color: rgba(255,255,255,.4); }
+  button.b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.b:disabled { opacity: .35; cursor: default; }
+  button.b.primary { background: var(--accent); color: #2a2208; border-color: transparent; font-weight: 600; }
+  .preset { padding: 4px; border-radius: 6px; border: 1px solid var(--line); background: transparent; cursor: pointer; display: flex; gap: 0; overflow: hidden; }
+  .preset:hover { border-color: rgba(255,255,255,.4); }
+  .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .preset span { display: block; width: 6px; height: 18px; }
+  .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--accent); color: #2a2208;
+      padding: 8px 14px; border-radius: 6px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast.show { opacity: 1; }
+  @media (max-width: 520px) { .panel { padding: 10px; } .stripe .n { display: none; } }
 </style>
 </head>
 <body>
 <div class="wrap"><canvas id="c"></canvas></div>
-<p>hover to part the threads · click to pluck</p>
+<p class="hint">hover to part the threads · click to pluck</p>
+
+<section class="panel" aria-label="Sett editor">
+  <div class="row">
+    <span class="label">Sett · <b id="count"></b> threads per repeat · <b id="stripes"></b> stripes</span>
+    <span class="spacer"></span>
+    <span class="label" id="presets"></span>
+  </div>
+  <div class="beam-wrap"><div class="beam" id="beam" role="listbox" aria-label="Warp stripes"></div></div>
+  <div class="row">
+    <div class="rack" id="rack" aria-label="Skeins"></div>
+    <span class="spacer"></span>
+    <button class="b" id="add" title="Add a stripe after the selected one">+ stripe</button>
+    <button class="b" id="remove" title="Remove the selected stripe">remove</button>
+    <button class="b primary" id="share">Share link</button>
+  </div>
+</section>
+<div class="toast" id="toast">Link copied</div>
+
 <script>
 (() => {
   // ---------- fabric geometry ----------
   let W = 0, H = 0;                  // viewport size, CSS px (set in build)
-  const PITCH = 2;                   // distance between neighbouring threads
+  const PITCH = 2;                   // distance between neighbouring threads, so 1 thread = 2 px
   const SEG = 10;                    // physics node spacing along each thread
-  const PERIOD = 110;                // warp (vertical stripe) repeat
   const SEAM0 = 105, SEAM_EVERY = 110;     // stitched pleat lines repeat across the width
 
   // ---------- physics ----------
@@ -40,109 +97,126 @@
   const WIND = matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 10; // idle breeze
   const DMAX = 16;     // max sideways displacement
 
-  // ---------- colours ----------
-  // weft = horizontal bands, top -> bottom: [height px, colour]
-  const WEFT = [
-    [14, '#d3cdb9'], [16, '#e84a3e'], [4, '#a83a2e'], [12, '#e84a3e'], [26, '#d6b23a'],
-    [22, '#ec6b4a'], [18, '#d987a0'], [20, '#adc4d8'], [18, '#4aa458'], [15, '#cdd3c3'],
-    [35, '#2f6cc0'], [14, '#ea7d88'], [26, '#ee7c4c'], [30, '#3f9a53'], [30, '#c9cdc3'],
-    [20, '#f08a5a'], [25, '#3b3f3a'], [35, '#e8447c'], [30, '#ef7d57'], [30, '#bbc9d6'],
-    [25, '#5f6c3a'], [45, '#e9c93c'], [30, '#cacdc5'], [40, '#f0a23c'], [40, '#e94c3d'],
-    [42, '#7fa146'], [25, '#b9c0b8'],
-  ];
-  // warp = vertical stripes, left -> right, repeats every PERIOD px
-  const WARP = [
-    [8, '#df4a3f'], [9, '#d6d2c0'], [10, '#e57f8e'], [8, '#7d9d45'], [12, '#e5c445'],
-    [9, '#a8bfd5'], [12, '#ec7150'], [12, '#3872be'], [9, '#46a15a'], [9, '#e35c8c'],
-    [12, '#d8d0bc'],
-  ];
+  // ---------- the sett: colour + thread count, used for warp and weft alike ----------
+  const SKEINS = ['#e84a3e', '#ee7c4c', '#f0a23c', '#e9c93c', '#7fa146', '#3f9a53', '#2f6cc0', '#2b3a67',
+                  '#adc4d8', '#e8447c', '#e57f8e', '#8a5a3c', '#3b3f3a', '#d6d2c0', '#f2efe6'];
+  const PRESETS = {
+    chennai: [['#d3cdb9', 7], ['#e84a3e', 8], ['#a83a2e', 2], ['#e84a3e', 6], ['#d6b23a', 13], ['#ec6b4a', 11], ['#d987a0', 9],
+              ['#adc4d8', 10], ['#4aa458', 9], ['#cdd3c3', 8], ['#2f6cc0', 18], ['#ea7d88', 7], ['#ee7c4c', 13], ['#3f9a53', 15],
+              ['#c9cdc3', 15], ['#f08a5a', 10], ['#3b3f3a', 12], ['#e8447c', 18], ['#ef7d57', 15], ['#bbc9d6', 15], ['#5f6c3a', 12],
+              ['#e9c93c', 22], ['#cacdc5', 15], ['#f0a23c', 20], ['#e94c3d', 20], ['#7fa146', 21], ['#b9c0b8', 12]],
+    indigo:  [['#f2efe6', 30], ['#2b3a67', 4], ['#f2efe6', 4], ['#2b3a67', 26], ['#adc4d8', 6], ['#2b3a67', 10]],
+    bleeding:[['#e84a3e', 24], ['#e9c93c', 5], ['#2b3a67', 16], ['#f2efe6', 4], ['#3f9a53', 12], ['#e84a3e', 6]],
+  };
+  let sett = [];         // [{c: '#hex', n: threads}]
+  let selected = 0;
+
+  const encode = () => sett.map(s => s.c.slice(1) + '.' + s.n).join(',');
+  const decode = str => {
+    const out = [];
+    for (const part of str.split(',')) {
+      const m = /^([0-9a-f]{6})\.(\d{1,3})$/i.exec(part);
+      if (m) out.push({ c: '#' + m[1].toLowerCase(), n: Math.max(1, +m[2]) });
+    }
+    return out.length ? out : null;
+  };
+  const fromPreset = name => PRESETS[name].map(([c, n]) => ({ c, n }));
+  const fromHash = () => { const m = /[#&]s=([^&]+)/.exec(location.hash); return m ? decode(decodeURIComponent(m[1])) : null; };
+  sett = fromHash() || fromPreset('chennai');
 
   const dpr = Math.min(2, window.devicePixelRatio || 1);
   const cv = document.getElementById('c');
   const ctx = cv.getContext('2d');
 
-  let seed = 20240906;
+  let seed = 1;
   const rnd = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
   const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   const rgb = c => `rgb(${c[0] | 0},${c[1] | 0},${c[2] | 0})`;
   // every thread is dyed a little differently: lightness wobble + a touch of grey
-  function linen(c) {
-    const f = 1 + (rnd() - 0.5) * 0.24;
-    const g = (c[0] + c[1] + c[2]) / 3, s = rnd() * 0.12;
+  function linen(c, r1, r2) {
+    const f = 1 + (r1 - 0.5) * 0.24;
+    const g = (c[0] + c[1] + c[2]) / 3, s = r2 * 0.12;
     return c.map(v => Math.max(0, Math.min(255, (v * (1 - s) + g * s) * f)));
   }
-  function bandAt(bands, pos) {
+  const period = () => sett.reduce((a, s) => a + s.n, 0) * PITCH;
+  function bandAt(pos) {
     let a = 0;
-    for (const [h, col] of bands) { a += h; if (pos < a) return col; }
-    return bands[bands.length - 1][1];
+    for (const s of sett) { a += s.n * PITCH; if (pos < a) return s.c; }
+    return sett[sett.length - 1].c;
   }
   const seamsIn = w => { const out = []; for (let x = SEAM0; x < w; x += SEAM_EVERY) out.push(x); return out; };
   const nearSeam = x => { const m = ((x - SEAM0) % SEAM_EVERY + SEAM_EVERY) % SEAM_EVERY; return m < 7 || m > SEAM_EVERY - 7; };
-  const WEFT_PERIOD = WEFT.reduce((a, b) => a + b[0], 0);
 
   // ---------- threads (rebuilt whenever the viewport changes) ----------
   let warps = [], wefts = [], grain, seams;
   function build() {
-  W = Math.max(1, Math.round(window.innerWidth)); H = Math.max(1, Math.round(window.innerHeight));
-  cv.width = W * dpr; cv.height = H * dpr;
-  seed = 20240906;
-  const NPW = Math.floor(H / SEG) + 2, NPF = Math.floor(W / SEG) + 2;
-  warps = []; wefts = [];
-  for (let i = 0, x = PITCH / 2; x < W; i++, x += PITCH) {
-    warps.push({
-      pos: x, color: rgb(linen(hex(bandAt(WARP, x % PERIOD)))),
-      width: PITCH * (1.05 + rnd() * 0.25),
-      d: new Float32Array(NPW), v: new Float32Array(NPW), n: NPW,
-      dash: (i % 2) * PITCH, stiff: nearSeam(x) ? 6 : 1,
-    });
-  }
-  for (let y = PITCH / 2; y < H; y += PITCH) {
-    const stiff = new Float32Array(NPF);
-    for (let k = 0; k < NPF; k++) stiff[k] = nearSeam(k * SEG) ? 6 : 1;
-    wefts.push({
-      pos: y, color: rgb(linen(hex(bandAt(WEFT, y % WEFT_PERIOD)))),
-      width: PITCH * (1.05 + rnd() * 0.25),
-      d: new Float32Array(NPF), v: new Float32Array(NPF), n: NPF, stiff,
-    });
-  }
+    W = Math.max(1, Math.round(window.innerWidth)); H = Math.max(1, Math.round(window.innerHeight));
+    cv.width = W * dpr; cv.height = H * dpr;
+    seed = 20240906;
+    const NPW = Math.floor(H / SEG) + 2, NPF = Math.floor(W / SEG) + 2;
+    warps = []; wefts = [];
+    for (let i = 0, x = PITCH / 2; x < W; i++, x += PITCH) {
+      warps.push({
+        pos: x, r1: rnd(), r2: rnd(), color: '',
+        width: PITCH * (1.05 + rnd() * 0.25),
+        d: new Float32Array(NPW), v: new Float32Array(NPW), n: NPW,
+        dash: (i % 2) * PITCH, stiff: nearSeam(x) ? 6 : 1,
+      });
+    }
+    for (let y = PITCH / 2; y < H; y += PITCH) {
+      const stiff = new Float32Array(NPF);
+      for (let k = 0; k < NPF; k++) stiff[k] = nearSeam(k * SEG) ? 6 : 1;
+      wefts.push({
+        pos: y, r1: rnd(), r2: rnd(), color: '',
+        width: PITCH * (1.05 + rnd() * 0.25),
+        d: new Float32Array(NPF), v: new Float32Array(NPF), n: NPF, stiff,
+      });
+    }
+    dye();
 
-  // ---------- static overlays: linen grain + pleat seams ----------
-  grain = document.createElement('canvas');
-  grain.width = W * dpr; grain.height = H * dpr;
-  {
-    const g = grain.getContext('2d');
-    const img = g.createImageData(grain.width, grain.height), p = img.data;
-    for (let i = 0; i < p.length; i += 4) { const v = 128 + (rnd() - 0.5) * 150; p[i] = p[i + 1] = p[i + 2] = v; p[i + 3] = 255; }
-    g.putImageData(img, 0, 0);
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.lineWidth = 1.2;
-    for (let i = 0, n = W * H / 380; i < n; i++) { // slubs: short lighter / darker fibres
-      const x = rnd() * W, y = rnd() * H, l = 6 + rnd() * 40, vert = rnd() < 0.4;
-      g.strokeStyle = rnd() < 0.5 ? 'rgba(235,235,235,.55)' : 'rgba(40,40,40,.4)';
-      g.beginPath(); g.moveTo(x, y); vert ? g.lineTo(x, y + l) : g.lineTo(x + l, y); g.stroke();
+    // ---------- static overlays: linen grain + pleat seams ----------
+    grain = document.createElement('canvas');
+    grain.width = W * dpr; grain.height = H * dpr;
+    {
+      const g = grain.getContext('2d');
+      const img = g.createImageData(grain.width, grain.height), p = img.data;
+      for (let i = 0; i < p.length; i += 4) { const v = 128 + (rnd() - 0.5) * 150; p[i] = p[i + 1] = p[i + 2] = v; p[i + 3] = 255; }
+      g.putImageData(img, 0, 0);
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      g.lineWidth = 1.2;
+      for (let i = 0, n = W * H / 380; i < n; i++) { // slubs: short lighter / darker fibres
+        const x = rnd() * W, y = rnd() * H, l = 6 + rnd() * 40, vert = rnd() < 0.4;
+        g.strokeStyle = rnd() < 0.5 ? 'rgba(235,235,235,.55)' : 'rgba(40,40,40,.4)';
+        g.beginPath(); g.moveTo(x, y); vert ? g.lineTo(x, y + l) : g.lineTo(x + l, y); g.stroke();
+      }
+    }
+    seams = document.createElement('canvas');
+    seams.width = W * dpr; seams.height = H * dpr;
+    {
+      const g = seams.getContext('2d');
+      g.setTransform(dpr, 0, 0, dpr, 0, 0);
+      for (const s of seamsIn(W)) {
+        let gr = g.createLinearGradient(s - 18, 0, s, 0);
+        gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.16)');
+        g.fillStyle = gr; g.fillRect(s - 18, 0, 18, H);
+        g.fillStyle = 'rgba(70,45,35,.38)'; g.fillRect(s - 0.5, 0, 1.2, H);
+        gr = g.createLinearGradient(s + 1, 0, s + 9, 0);
+        gr.addColorStop(0, 'rgba(255,255,255,.10)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = gr; g.fillRect(s + 1, 0, 8, H);
+      }
     }
   }
-  seams = document.createElement('canvas');
-  seams.width = W * dpr; seams.height = H * dpr;
-  {
-    const g = seams.getContext('2d');
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    for (const s of seamsIn(W)) {
-      let gr = g.createLinearGradient(s - 18, 0, s, 0);
-      gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.16)');
-      g.fillStyle = gr; g.fillRect(s - 18, 0, 18, H);
-      g.fillStyle = 'rgba(70,45,35,.38)'; g.fillRect(s - 0.5, 0, 1.2, H);
-      gr = g.createLinearGradient(s + 1, 0, s + 9, 0);
-      gr.addColorStop(0, 'rgba(255,255,255,.10)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = gr; g.fillRect(s + 1, 0, 8, H);
-    }
-  }
+  // recolour every thread from the sett without disturbing the physics
+  function dye() {
+    const P = period();
+    for (const t of warps) t.color = rgb(linen(hex(bandAt(t.pos % P)), t.r1, t.r2));
+    for (const t of wefts) t.color = rgb(linen(hex(bandAt(t.pos % P)), t.r1, t.r2));
   }
   build();
   let resizeTimer = 0;
   window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(build, 120); });
 
-  // ---------- pointer ----------
+  // ---------- pointer on the cloth ----------
   const mouse = { x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, on: false };
   const toLocal = e => {
     const r = cv.getBoundingClientRect();
@@ -240,6 +314,85 @@
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
+
+  // ---------- the beam: sett editor ----------
+  const $ = id => document.getElementById(id);
+  const beam = $('beam'), rack = $('rack'), presetsEl = $('presets'), toast = $('toast');
+  const PX_PER_THREAD = 1.6, MIN_N = 1, MAX_N = 120, MAX_STRIPES = 40;
+
+  function changed() { dye(); renderBeam(); history.replaceState(null, '', '#s=' + encode()); }
+
+  function renderBeam() {
+    selected = clamp(selected, 0, sett.length - 1);
+    beam.textContent = '';
+    sett.forEach((s, i) => {
+      const el = document.createElement('div');
+      el.className = 'stripe' + (i === selected ? ' sel' : '');
+      el.style.background = s.c; el.style.width = (s.n * PX_PER_THREAD) + 'px';
+      el.setAttribute('role', 'option'); el.setAttribute('aria-selected', i === selected);
+      el.setAttribute('aria-label', `stripe ${i + 1}, ${s.n} threads`); el.tabIndex = 0;
+      el.innerHTML = `<span class="n">${s.n}</span><div class="handle" title="drag to change thread count"></div>`;
+      el.addEventListener('click', e => { if (e.target.classList.contains('handle')) return; selected = i; renderBeam(); });
+      el.addEventListener('keydown', e => {
+        if (e.key === 'ArrowRight' && e.shiftKey) { s.n = Math.min(MAX_N, s.n + 1); changed(); }
+        else if (e.key === 'ArrowLeft' && e.shiftKey) { s.n = Math.max(MIN_N, s.n - 1); changed(); }
+        else if (e.key === 'ArrowRight') { selected = Math.min(sett.length - 1, i + 1); renderBeam(); focusSel(); }
+        else if (e.key === 'ArrowLeft') { selected = Math.max(0, i - 1); renderBeam(); focusSel(); }
+        else return;
+        e.preventDefault();
+      });
+      const h = el.querySelector('.handle');
+      h.addEventListener('pointerdown', e => {
+        e.preventDefault(); e.stopPropagation();
+        selected = i; renderBeam();
+        const start = e.clientX, n0 = s.n, live = beam.children[i], num = live.querySelector('.n');
+        live.setPointerCapture?.(e.pointerId);
+        const move = ev => {
+          s.n = clamp(Math.round(n0 + (ev.clientX - start) / PX_PER_THREAD), MIN_N, MAX_N);
+          live.style.width = (s.n * PX_PER_THREAD) + 'px'; num.textContent = s.n; dye(); updateCounts();
+        };
+        const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); changed(); };
+        window.addEventListener('pointermove', move); window.addEventListener('pointerup', up);
+      });
+      beam.appendChild(el);
+    });
+    updateCounts();
+    $('remove').disabled = sett.length <= 2;
+    $('add').disabled = sett.length >= MAX_STRIPES;
+  }
+  const focusSel = () => beam.children[selected]?.focus();
+  function updateCounts() {
+    $('count').textContent = sett.reduce((a, s) => a + s.n, 0);
+    $('stripes').textContent = sett.length;
+  }
+
+  for (const c of SKEINS) {
+    const b = document.createElement('button');
+    b.className = 'skein'; b.style.background = c; b.title = c; b.setAttribute('aria-label', 'dye selected stripe ' + c);
+    b.addEventListener('click', () => { sett[selected].c = c; changed(); });
+    rack.appendChild(b);
+  }
+  for (const name of Object.keys(PRESETS)) {
+    const b = document.createElement('button');
+    b.className = 'preset'; b.title = name; b.setAttribute('aria-label', 'preset ' + name);
+    b.innerHTML = PRESETS[name].slice(0, 8).map(([c]) => `<span style="background:${c}"></span>`).join('');
+    b.addEventListener('click', () => { sett = fromPreset(name); selected = 0; changed(); });
+    presetsEl.appendChild(b);
+  }
+  $('add').addEventListener('click', () => {
+    const s = sett[selected];
+    sett.splice(selected + 1, 0, { c: s.c, n: s.n }); selected++; changed();
+  });
+  $('remove').addEventListener('click', () => { if (sett.length > 2) { sett.splice(selected, 1); changed(); } });
+  $('share').addEventListener('click', async () => {
+    const url = location.origin + location.pathname + '#s=' + encode();
+    history.replaceState(null, '', '#s=' + encode());
+    try { await navigator.clipboard.writeText(url); toast.textContent = 'Link copied'; }
+    catch { toast.textContent = 'Copy the address bar to share'; }
+    toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1600);
+  });
+  window.addEventListener('hashchange', () => { const s = fromHash(); if (s) { sett = s; selected = 0; changed(); } });
+  renderBeam();
 })();
 </script>
 </body>
