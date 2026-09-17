@@ -4,81 +4,126 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Madras Weave</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&display=swap">
 <style>
-  :root { --panel: rgba(26, 22, 18, .86); --ink: #f1ebe0; --dim: #b9b09f; --line: rgba(255,255,255,.14); --accent: #f1c948; }
+  :root {
+    --ink: #f3e9d6; --dim: #d3bd98; --accent: #e7c068; --paper: #f3ead8; --paper-ink: #3b2a1a;
+    --wood: linear-gradient(90deg, rgba(0,0,0,.22), transparent 6%, transparent 94%, rgba(0,0,0,.22)),
+            repeating-linear-gradient(90deg, rgba(0,0,0,.07) 0 1px, transparent 1px 5px, rgba(0,0,0,.04) 5px 6px, transparent 6px 13px),
+            linear-gradient(180deg, #8f5c33 0%, #77492a 55%, #613820 100%);
+    --wood-edge: #3a2112;
+    --brass: linear-gradient(180deg, #efd28a, #cfa64a 55%, #b88c33);
+    --panel: rgba(26, 22, 18, .86);
+    --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  }
   html, body { margin: 0; height: 100%; background: #d9d4c4; color: var(--ink); }
   body { overflow: hidden; font: 13px/1.4 system-ui, -apple-system, sans-serif; }
   .wrap { position: fixed; inset: 0; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-  .hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 999px;
-      background: var(--panel); color: var(--ink); font-size: 12px; letter-spacing: .04em; pointer-events: none; }
+  .hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 3px;
+      background: var(--paper); color: var(--paper-ink); font-size: 12px; letter-spacing: .04em; pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25); }
 
-  /* ---- the beam: bottom panel ---- */
-  .panel { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(760px, calc(100vw - 24px));
-      background: var(--panel); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-radius: 10px;
-      box-shadow: 0 14px 40px -12px rgba(0,0,0,.6); padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
+  /* ---- the loom frame: a wooden panel with brass pegs at the corners ---- */
+  .panel { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); width: min(780px, calc(100vw - 24px)); box-sizing: border-box;
+      background:
+        radial-gradient(circle at 11px 11px, #efd28a 0 2.5px, #8a6a2a 3px, transparent 4.5px) left top / 24px 24px no-repeat,
+        radial-gradient(circle at 13px 11px, #efd28a 0 2.5px, #8a6a2a 3px, transparent 4.5px) right top / 24px 24px no-repeat,
+        radial-gradient(circle at 11px 13px, #efd28a 0 2.5px, #8a6a2a 3px, transparent 4.5px) left bottom / 24px 24px no-repeat,
+        radial-gradient(circle at 13px 13px, #efd28a 0 2.5px, #8a6a2a 3px, transparent 4.5px) right bottom / 24px 24px no-repeat,
+        var(--wood);
+      border: 1px solid var(--wood-edge); border-radius: 5px;
+      box-shadow: inset 0 1px 0 rgba(255,225,180,.28), inset 0 -2px 0 rgba(0,0,0,.35), 0 18px 40px -12px rgba(0,0,0,.7);
+      padding: 12px 18px 16px; display: flex; flex-direction: column; gap: 10px; }
   .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
-  .label b { color: var(--ink); font-weight: 600; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; }
+  .label { font: italic 500 15px/1.2 var(--serif); color: var(--dim); letter-spacing: .01em; }
+  .label b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
   .spacer { flex: 1; }
-  #presets { display: flex; gap: 6px; align-items: center; }
+  #presets { display: flex; gap: 8px; align-items: center; }
 
-  .beam-wrap { overflow-x: auto; overflow-y: hidden; padding: 4px 0 20px; }
-  .beam { display: flex; height: 44px; border-radius: 4px; overflow: visible; min-width: max-content;
-      box-shadow: inset 0 0 0 1px var(--line); touch-action: none; }
+  /* ---- the warp beam: a turned wooden roller with the sett wound on it ---- */
+  .cradle { display: flex; align-items: center; gap: 0; }
+  .cap { flex: none; width: 18px; height: 60px; border-radius: 5px; background: var(--wood); border: 1px solid var(--wood-edge);
+      box-shadow: inset 0 1px 0 rgba(255,225,180,.25); position: relative; }
+  .cap::after { content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 8px; margin-top: -4px; border-radius: 4px;
+      background: radial-gradient(circle at 50% 40%, #2a1608, #4a2a14); }
+  .beam-wrap { flex: 1; overflow-x: auto; overflow-y: hidden; padding: 6px 0 22px; scrollbar-width: thin; scrollbar-color: #4a2a14 transparent; }
+  .beam { position: relative; display: flex; height: 48px; min-width: max-content; touch-action: none; border-radius: 3px; }
+  .beam::after { content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: 3px;
+      background:
+        repeating-linear-gradient(180deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px),          /* the wound thread */
+        linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.08) 28%, rgba(0,0,0,0) 45%, rgba(0,0,0,.18) 72%, rgba(0,0,0,.5)); /* roller shading */
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.35); }
   .stripe { position: relative; height: 100%; min-width: 8px; cursor: pointer; flex: none; box-sizing: border-box; }
-  .stripe:first-child { border-radius: 4px 0 0 4px; } .stripe:last-child { border-radius: 0 4px 4px 0; }
-  .stripe.sel { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 2; border-radius: 2px; }
-  .stripe .n { position: absolute; left: 0; right: 0; bottom: -18px; text-align: center; font-size: 10px; color: var(--dim);
-      font-variant-numeric: tabular-nums; pointer-events: none; opacity: 0; }
-  .stripe.sel .n { opacity: 1; }
+  .stripe.sel { z-index: 2; box-shadow: 0 0 0 2px #2a1608, 0 0 0 4px var(--accent); }
+  .stripe .n { position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%); padding: 1px 6px; border-radius: 2px;
+      background: var(--paper); color: var(--paper-ink); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums;
+      pointer-events: none; opacity: 0; box-shadow: 0 1px 2px rgba(0,0,0,.4); white-space: nowrap; }
+  .stripe .n::before { content: ""; position: absolute; left: 50%; top: -6px; width: 1px; height: 6px; background: rgba(243,234,216,.8); }
+  .stripe.sel .n { opacity: 1; z-index: 3; }
   .handle { position: absolute; top: -4px; bottom: -4px; right: -6px; width: 12px; cursor: ew-resize; z-index: 3; touch-action: none; }
-  .handle::after { content: ""; position: absolute; left: 5px; top: 8px; bottom: 8px; width: 2px; background: rgba(255,255,255,.55); border-radius: 1px; opacity: 0; }
+  .handle::after { content: ""; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: rgba(255,255,255,.7); border-radius: 1px; opacity: 0; }
   .stripe.sel .handle::after, .stripe:hover .handle::after { opacity: 1; }
 
-  .rack { display: flex; gap: 6px; flex-wrap: wrap; }
-  .skein { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); cursor: pointer; padding: 0;
-      box-shadow: inset 0 -4px 6px rgba(0,0,0,.25); transition: transform .12s; }
-  .skein:hover { transform: scale(1.12); border-color: #fff; }
+  /* ---- the drying rod: dyed hanks hanging in a row ---- */
+  .rack { position: relative; display: flex; gap: 7px; flex-wrap: wrap; padding-top: 12px; }
+  .rack::before { content: ""; position: absolute; left: -6px; right: -6px; top: 3px; height: 5px; border-radius: 3px;
+      background: linear-gradient(180deg, #c9a06a, #8a5a34 60%, #4a2a14); box-shadow: 0 1px 2px rgba(0,0,0,.5); }
+  .skein { position: relative; width: 22px; height: 34px; border-radius: 11px; border: 0; cursor: pointer; padding: 0;
+      background: repeating-linear-gradient(-58deg, rgba(255,255,255,.22) 0 2px, rgba(0,0,0,.10) 2px 4px, rgba(0,0,0,0) 4px 5px), var(--c);
+      box-shadow: inset 2px 0 3px rgba(255,255,255,.25), inset -3px -2px 5px rgba(0,0,0,.35), 0 2px 3px rgba(0,0,0,.4);
+      transition: transform .12s; transform-origin: 50% 0; }
+  .skein::before { content: ""; position: absolute; left: 50%; top: -9px; width: 2px; height: 9px; margin-left: -1px; background: rgba(243,234,216,.7); }
+  .skein:hover { transform: rotate(-6deg) scale(1.06); }
   .skein:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-  button.b { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px;
-      font: inherit; font-size: 12px; cursor: pointer; letter-spacing: .02em; }
-  button.b:hover { border-color: rgba(255,255,255,.4); }
+  /* ---- paper tags and a brass plate for the controls ---- */
+  button.b { position: relative; background: var(--paper); color: var(--paper-ink); border: 1px solid #c9b78f; border-radius: 3px; padding: 6px 11px 6px 18px;
+      font: inherit; font-size: 12px; cursor: pointer; letter-spacing: .02em; box-shadow: 0 2px 3px rgba(0,0,0,.35); }
+  button.b::before { content: ""; position: absolute; left: 7px; top: 50%; width: 5px; height: 5px; margin-top: -2.5px; border-radius: 50%;
+      background: #8a6a2a; box-shadow: inset 0 0 0 1.5px #f3ead8; }
+  button.b:hover { background: #fbf4e4; }
   button.b:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  button.b:disabled { opacity: .35; cursor: default; }
-  button.b.primary { background: var(--accent); color: #2a2208; border-color: transparent; font-weight: 600; }
-  .preset { padding: 4px; border-radius: 6px; border: 1px solid var(--line); background: transparent; cursor: pointer; display: flex; gap: 0; overflow: hidden; }
-  .preset:hover { border-color: rgba(255,255,255,.4); }
+  button.b:disabled { opacity: .4; cursor: default; }
+  button.b.primary { background: var(--brass); color: #2a1e08; border-color: #8a6a2a; font-weight: 600; padding-left: 11px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.5), 0 2px 3px rgba(0,0,0,.4); text-shadow: 0 1px 0 rgba(255,255,255,.35); }
+  button.b.primary::before { display: none; }
+  button.b.primary:hover { background: linear-gradient(180deg, #f6dc98, #d8b058 55%, #c19638); }
+  .preset { position: relative; padding: 3px; border-radius: 2px; border: 1px solid rgba(0,0,0,.35); background: var(--paper); cursor: pointer; display: flex; gap: 0;
+      box-shadow: 0 2px 3px rgba(0,0,0,.4); transform: rotate(-2deg); }
+  .preset:nth-child(2) { transform: rotate(1.5deg); } .preset:nth-child(3) { transform: rotate(-1deg); }
+  .preset::before { content: ""; position: absolute; left: 50%; top: -4px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ff8a7a, #b0261a); box-shadow: 0 1px 1px rgba(0,0,0,.5); }
+  .preset:hover { transform: rotate(0) scale(1.06); }
   .preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .preset span { display: block; width: 6px; height: 18px; }
-  .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--accent); color: #2a2208;
-      padding: 8px 14px; border-radius: 6px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--brass); color: #2a1e08; border: 1px solid #8a6a2a;
+      padding: 8px 14px; border-radius: 3px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .toast.show { opacity: 1; }
-  .corner { position: fixed; top: 12px; display: flex; align-items: center; gap: 4px; background: var(--panel); color: var(--ink);
-      border-radius: 999px; padding: 4px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .corner { position: fixed; top: 12px; display: flex; align-items: center; gap: 4px; background: var(--wood); color: var(--ink);
+      border: 1px solid var(--wood-edge); border-radius: 4px; padding: 3px; box-shadow: inset 0 1px 0 rgba(255,225,180,.25), 0 4px 10px rgba(0,0,0,.35); }
   .corner.left { left: 12px; } .corner.right { right: 12px; }
-  .corner button { background: transparent; color: var(--ink); border: 0; border-radius: 999px; width: 30px; height: 30px; font: inherit;
+  .corner button { background: transparent; color: var(--ink); border: 0; border-radius: 3px; width: 30px; height: 30px; font: inherit;
       font-size: 16px; cursor: pointer; line-height: 1; }
   .corner button:hover { background: rgba(255,255,255,.12); }
   .corner button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
   .corner .z { min-width: 44px; text-align: center; font-size: 11px; letter-spacing: .06em; color: var(--dim); font-variant-numeric: tabular-nums; }
-  .corner .wrapme { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: .04em; text-transform: lowercase; background: var(--accent); color: #2a2208; font-weight: 600; }
-  .corner .wrapme:hover { background: #ffd95c; }
+  .corner .wrapme { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: .04em; text-transform: lowercase; background: var(--brass); color: #2a1e08;
+      font-weight: 600; border: 1px solid #8a6a2a; box-shadow: inset 0 1px 0 rgba(255,255,255,.5); }
+  .corner .wrapme:hover { background: linear-gradient(180deg, #f6dc98, #d8b058 55%, #c19638); }
   body.wrapped .panel, body.wrapped .hint, body.wrapped .corner.left { display: none; }
   .card { position: fixed; box-sizing: border-box; padding: 16px 22px 18px; display: flex; flex-direction: column; gap: 6px; color: #2a2420;
       opacity: 0; transition: opacity .35s; pointer-events: none; }
   .card.show { opacity: 1; pointer-events: auto; }
   .card .eyebrow { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: #8a8272; }
-  .card h2 { margin: 0; font-size: 20px; font-weight: 600; line-height: 1.2; text-wrap: balance; }
+  .card h2 { margin: 0; font: italic 500 22px/1.2 var(--serif); text-wrap: balance; }
   .card .sub { font-size: 12px; color: #6d675a; font-variant-numeric: tabular-nums; }
   .card .sett-strip { display: flex; height: 14px; border-radius: 3px; overflow: hidden; margin-top: 4px; }
   .card .sett-strip i { display: block; min-width: 1px; }
   .card .actions { display: flex; gap: 8px; margin-top: auto; }
-  .card .b { color: #2a2420; border-color: rgba(70,55,40,.3); }
-  .card .b.primary { color: #2a2208; }
   @media (max-width: 720px) { .hint { top: 58px; white-space: nowrap; font-size: 11px; } }
-  @media (max-width: 520px) { .panel { padding: 10px; } .stripe .n { display: none; } }
+  @media (max-width: 520px) { .panel { padding: 10px 12px 12px; } .stripe .n { display: none; } .cap { width: 12px; } }
 </style>
 </head>
 <body>
@@ -103,13 +148,13 @@
 
 <section class="panel" aria-label="Sett editor">
   <div class="row">
-    <span class="label">Sett · <b id="count"></b> threads per repeat · <b id="stripes"></b> stripes</span>
+    <span class="label">Warp beam · a sett of <b id="count"></b> threads in <b id="stripes"></b> stripes</span>
     <span class="spacer"></span>
     <span class="label" id="presets"></span>
   </div>
-  <div class="beam-wrap"><div class="beam" id="beam" role="listbox" aria-label="Warp stripes"></div></div>
+  <div class="cradle"><div class="cap"></div><div class="beam-wrap"><div class="beam" id="beam" role="listbox" aria-label="Warp stripes"></div></div><div class="cap"></div></div>
   <div class="row">
-    <div class="rack" id="rack" aria-label="Skeins"></div>
+    <div class="rack" id="rack" aria-label="Dyed hanks"></div>
     <span class="spacer"></span>
     <button class="b" id="add" title="Add a stripe after the selected one">+ stripe</button>
     <button class="b" id="remove" title="Remove the selected stripe">remove</button>
@@ -590,7 +635,7 @@
 
   for (const c of SKEINS) {
     const b = document.createElement('button');
-    b.className = 'skein'; b.style.background = c; b.title = c; b.setAttribute('aria-label', 'dye selected stripe ' + c);
+    b.className = 'skein'; b.style.setProperty('--c', c); b.title = c; b.setAttribute('aria-label', 'dye selected stripe ' + c);
     b.addEventListener('click', () => { sett[selected].c = c; changed(); });
     rack.appendChild(b);
   }
