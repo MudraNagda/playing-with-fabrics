@@ -165,7 +165,7 @@
     bleeding:[['#e84a3e', 24], ['#e9c93c', 5], ['#2b3a67', 16], ['#f2efe6', 4], ['#3f9a53', 12], ['#e84a3e', 6]],
   };
   let sett = [];         // [{c: '#hex', n: threads}]
-  let selected = 0;
+  let selected = 0, selRep = 0;   // which stripe is selected, and which repeat of it was clicked
 
   const encode = () => sett.map(s => s.c.slice(1) + '.' + s.n).join(',');
   const decode = str => {
@@ -642,27 +642,28 @@
     selected = clamp(selected, 0, sett.length - 1);
     beam.textContent = '';
     const ppt = pxPerThread(), repeatPx = period() * zoom, repeats = Math.ceil((cv.clientWidth || window.innerWidth) / repeatPx) + 1;
+    selRep = clamp(selRep, 0, repeats - 1);
     for (let r = 0; r < repeats; r++) sett.forEach((s, i) => {
       const el = document.createElement('div');
-      el.className = 'stripe' + (i === selected ? ' sel' : '');
+      el.className = 'stripe' + (i === selected && r === selRep ? ' sel' : '');   // mark only the one that was clicked
       el.style.width = (s.n * ppt) + 'px';   // no fill: the real threads show through from the canvas
       el.dataset.i = i;
       if (r === 0) { el.setAttribute('role', 'option'); el.setAttribute('aria-selected', i === selected); el.tabIndex = 0; }
       else el.setAttribute('aria-hidden', 'true');
       el.setAttribute('aria-label', `stripe ${i + 1}, ${s.n} threads`);
       el.innerHTML = `<span class="n">${s.n}</span><div class="handle" title="drag to change thread count"></div>`;
-      el.addEventListener('click', e => { if (e.target.classList.contains('handle')) return; selected = i; renderBeam(); });
+      el.addEventListener('click', e => { if (e.target.classList.contains('handle')) return; selected = i; selRep = r; renderBeam(); });
       el.addEventListener('keydown', e => {
         if (e.key === 'ArrowRight' && e.shiftKey) { s.n = Math.min(MAX_N, s.n + 1); changed(); }
         else if (e.key === 'ArrowLeft' && e.shiftKey) { s.n = Math.max(MIN_N, s.n - 1); changed(); }
-        else if (e.key === 'ArrowRight') { selected = Math.min(sett.length - 1, i + 1); renderBeam(); focusSel(); }
-        else if (e.key === 'ArrowLeft') { selected = Math.max(0, i - 1); renderBeam(); focusSel(); }
+        else if (e.key === 'ArrowRight') { selected = Math.min(sett.length - 1, i + 1); selRep = 0; renderBeam(); focusSel(); }
+        else if (e.key === 'ArrowLeft') { selected = Math.max(0, i - 1); selRep = 0; renderBeam(); focusSel(); }
         else return;
         e.preventDefault();
       });
       el.querySelector('.handle').addEventListener('pointerdown', e => {
         e.preventDefault(); e.stopPropagation();
-        selected = i; renderBeam();
+        selected = i; selRep = r; renderBeam();
         const start = e.clientX, n0 = s.n;
         const move = ev => {
           s.n = clamp(Math.round(n0 + (ev.clientX - start) / ppt), MIN_N, MAX_N);
