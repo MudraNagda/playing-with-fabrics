@@ -141,7 +141,6 @@
   let zoom = 1;                      // screen px per fabric px
   const PITCH = 2;                   // distance between neighbouring threads, so 1 thread = 2 px
   const SEG = 10;                    // physics node spacing along each thread
-  const SEAM0 = 105, SEAM_EVERY = 110;     // stitched pleat lines repeat across the width
 
   // ---------- physics ----------
   const K = 40;        // spring back to rest
@@ -200,11 +199,9 @@
     for (const s of sett) { a += s.n * PITCH; if (pos < a) return s.c; }
     return sett[sett.length - 1].c;
   }
-  const seamsIn = w => { const out = []; for (let x = SEAM0; x < w; x += SEAM_EVERY) out.push(x); return out; };
-  const nearSeam = x => { const m = ((x - SEAM0) % SEAM_EVERY + SEAM_EVERY) % SEAM_EVERY; return m < 7 || m > SEAM_EVERY - 7; };
 
   // ---------- threads (rebuilt whenever the viewport changes) ----------
-  let warps = [], wefts = [], grain, seams;
+  let warps = [], wefts = [], grain;
   let fellY = Infinity, clothH = 0;   // screen y where the bare warp begins, and the height of woven cloth above the reed
   function build() {
     const vw = cv.clientWidth || window.innerWidth, vh = cv.clientHeight || window.innerHeight;   // the canvas's own laid-out size
@@ -218,12 +215,12 @@
         pos: x, r1: rnd(), r2: rnd(), color: '',
         width: PITCH * (1.05 + rnd() * 0.25),
         d: new Float32Array(NPW), v: new Float32Array(NPW), n: NPW,
-        dash: (i % 2) * PITCH, stiff: nearSeam(x) ? 6 : 1,
+        dash: (i % 2) * PITCH, stiff: 1,
       });
     }
     for (let y = PITCH / 2; y < H; y += PITCH) {
       const stiff = new Float32Array(NPF);
-      for (let k = 0; k < NPF; k++) stiff[k] = nearSeam(k * SEG) ? 6 : 1;
+      stiff.fill(1);
       wefts.push({
         pos: y, r1: rnd(), r2: rnd(), color: '',
         width: PITCH * (1.05 + rnd() * 0.25),
@@ -232,7 +229,7 @@
     }
     dye();
 
-    // ---------- static overlays: linen grain + pleat seams ----------
+    // ---------- static overlay: linen grain ----------
     grain = document.createElement('canvas');
     grain.width = W * dpr; grain.height = H * dpr;
     {
@@ -246,21 +243,6 @@
         const x = rnd() * W, y = rnd() * H, l = 6 + rnd() * 40, vert = rnd() < 0.4;
         g.strokeStyle = rnd() < 0.5 ? 'rgba(235,235,235,.55)' : 'rgba(40,40,40,.4)';
         g.beginPath(); g.moveTo(x, y); vert ? g.lineTo(x, y + l) : g.lineTo(x + l, y); g.stroke();
-      }
-    }
-    seams = document.createElement('canvas');
-    seams.width = W * dpr; seams.height = H * dpr;
-    {
-      const g = seams.getContext('2d');
-      g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      for (const s of seamsIn(W)) {
-        let gr = g.createLinearGradient(s - 18, 0, s, 0);
-        gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(1, 'rgba(0,0,0,.16)');
-        g.fillStyle = gr; g.fillRect(s - 18, 0, 18, H);
-        g.fillStyle = 'rgba(70,45,35,.38)'; g.fillRect(s - 0.5, 0, 1.2, H);
-        gr = g.createLinearGradient(s + 1, 0, s + 9, 0);
-        gr.addColorStop(0, 'rgba(255,255,255,.10)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-        g.fillStyle = gr; g.fillRect(s + 1, 0, 8, H);
       }
     }
   }
@@ -365,7 +347,6 @@
     ctx.globalCompositeOperation = 'overlay'; ctx.globalAlpha = 0.22;
     ctx.drawImage(grain, 0, 0, W, H);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
-    ctx.drawImage(seams, 0, 0, W, H);
     // below the frame bar nothing is woven: the same warp threads, each stripe gathered into a band as on a warping frame
     const beamEl = document.getElementById('beam'), reedEl = document.getElementById('reed');
     const cr = cv.getBoundingClientRect();

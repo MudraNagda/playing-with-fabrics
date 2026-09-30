@@ -6,7 +6,7 @@ Small experiments in simulating cloth in the browser. Each folder is one standal
 
 `madras/index.html`: a woven madras plaid, drawn thread by thread on a 2D canvas.
 
-Every vertical warp and horizontal weft thread is its own physics line rendered as a plain weave. Hover to part the threads, click to pluck them, and they spring back with tension and damping while a faint breeze keeps the cloth swaying at rest. Threads near the stitched pleat seams are stiffer.
+Every vertical warp and horizontal weft thread is its own physics line rendered as a plain weave. Hover to part the threads, click to pluck them, and they spring back with tension and damping while a faint breeze keeps the cloth swaying at rest.
 
 **Design your own.** The loom sits on a light page with margins around it, rather than filling the window. Its lower part is modelled on a warping frame in a handloom workshop: below the woven cloth, two oxide-brown painted bars hold the unwoven warp, and each stripe's threads gather into a band of colour between them. Those threads are the editor. They are the same simulated threads as the cloth, so each band hangs directly below its stripe in the weave, and they part under the cursor too. On the floor below stand the yarn cones, one per colour.
 
