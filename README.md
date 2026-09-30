@@ -8,9 +8,9 @@ Small experiments in simulating cloth in the browser. Each folder is one standal
 
 Every vertical warp and horizontal weft thread is its own physics line rendered as a plain weave. Hover to part the threads, click to pluck them, and they spring back with tension and damping while a faint breeze keeps the cloth swaying at rest. Threads near the stitched pleat seams are stiffer.
 
-**Design your own.** The bottom of the screen is the loom as a weaver sees it: the woven cloth, then the reed, then the bare warp threads that have not been woven yet, running back over the dark of the pit. Those bare threads are the editor. They are the same simulated threads as the cloth, so each stripe sits directly below its stripe in the weave at exactly the same width, and they part under the cursor too. Below them lie the boat shuttles, one bobbin per colour.
+**Design your own.** The bottom of the screen is modelled on a warping frame in a handloom workshop: below the woven cloth, two oxide-brown painted bars hold the unwoven warp, and each stripe's threads gather into a band of colour between them. Those threads are the editor. They are the same simulated threads as the cloth, so each band hangs directly below its stripe in the weave, and they part under the cursor too. On the floor below stand the yarn cones, one per colour.
 
-- Tap a stripe in the bare warp, then tap a shuttle to dye it.
+- Tap a band of warp, then tap a cone to dye it.
 - Drag a stripe's right edge to change its thread count. Shift + arrow keys do the same from the keyboard.
 - `+ stripe` duplicates the selected stripe; `remove` deletes it.
 - `Share link` copies a URL with the whole sett encoded in it, so nothing is stored anywhere.
