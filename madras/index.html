@@ -7,60 +7,45 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&display=swap">
 <style>
-  :root {
-    --ink: #f3e9d6; --dim: #d3bd98; --accent: #e7c068; --paper: #f3ead8; --paper-ink: #3b2a1a;
-    --wood: linear-gradient(90deg, rgba(0,0,0,.22), transparent 6%, transparent 94%, rgba(0,0,0,.22)),
-            repeating-linear-gradient(90deg, rgba(0,0,0,.07) 0 1px, transparent 1px 5px, rgba(0,0,0,.04) 5px 6px, transparent 6px 13px),
-            linear-gradient(180deg, #8f5c33 0%, #77492a 55%, #613820 100%);
-    --wood-edge: #3a2112;
-    --brass: linear-gradient(180deg, #efd28a, #cfa64a 55%, #b88c33);
-    --panel: rgba(26, 22, 18, .86);
-    --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
-  }
+  :root { --panel: rgba(26, 22, 18, .86); --ink: #f1ebe0; --dim: #b9b09f; --line: rgba(255,255,255,.14); --accent: #f1c948;
+          --paper: #f3ead8; --paper-ink: #3b2a1a; --pit: #191613; --serif: "Fraunces", "Iowan Old Style", Georgia, serif; }
   html, body { margin: 0; height: 100%; background: #d9d4c4; color: var(--ink); }
   body { overflow: hidden; font: 13px/1.4 system-ui, -apple-system, sans-serif; }
   .wrap { position: fixed; inset: 0; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-  .hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 3px;
-      background: var(--paper); color: var(--paper-ink); font-size: 12px; letter-spacing: .04em; pointer-events: none;
-      box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 999px;
+      background: var(--panel); color: var(--ink); font-size: 12px; letter-spacing: .04em; pointer-events: none; }
 
-  /* ---- the loom frame: a full-width wooden bar along the bottom ---- */
-  .panel { position: fixed; left: 0; right: 0; bottom: 0; box-sizing: border-box;
-      background: var(--wood); border-top: 1px solid var(--wood-edge);
-      box-shadow: inset 0 1px 0 rgba(255,225,180,.28), 0 -12px 30px -10px rgba(0,0,0,.6);
-      padding: 0 0 22px; display: flex; flex-direction: column; gap: 12px; }
-  .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 0 28px; }
-  .label { font: italic 500 14px/1.2 var(--serif); color: var(--dim); letter-spacing: .01em; white-space: nowrap; }
-  .label b { color: var(--ink); font-weight: 500; font-variant-numeric: tabular-nums; }
-  .spacer { flex: 1; }
-  #presets { display: flex; gap: 8px; align-items: center; }
-
-  /* ---- the warp beam: the sett at true scale, every stripe directly under its stripe in the cloth ---- */
-  .beam-wrap { position: relative; overflow: hidden; padding: 0 0 22px; }
-  .beam { position: relative; display: flex; height: 40px; touch-action: none; }
-  .beam::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-      background:
-        repeating-linear-gradient(180deg, rgba(0,0,0,.14) 0 1px, transparent 1px 3px),          /* the wound thread */
-        linear-gradient(180deg, rgba(255,255,255,.42), rgba(255,255,255,.08) 28%, rgba(0,0,0,0) 45%, rgba(0,0,0,.18) 72%, rgba(0,0,0,.5)); /* roller shading */
-      box-shadow: inset 0 -1px 0 rgba(0,0,0,.45); }
+  /* ---- the loom, seen from above: woven cloth, then the reed, then the bare warp running back to the beam ---- */
+  .panel { position: fixed; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
+  /* the reed: a plain wooden comb the warp passes through */
+  .reed { height: 13px; box-sizing: border-box; border-top: 3px solid #4a3d31; border-bottom: 3px solid #4a3d31;
+      background: repeating-linear-gradient(90deg, #2a221b 0 1px, #a08c72 1px 4px); pointer-events: none; }
+  /* the bare warp itself is drawn on the canvas as real threads; these are the hit areas over it */
+  .beam-wrap { position: relative; overflow: hidden; }
+  .beam { position: relative; display: flex; height: 84px; touch-action: none; }
   .stripe { position: relative; height: 100%; cursor: pointer; flex: none; box-sizing: border-box; }
-  .stripe.sel { z-index: 2; box-shadow: inset 0 0 0 2px var(--accent); }
-  .stripe .n { position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%); padding: 1px 6px; border-radius: 2px;
+  .stripe:hover { background: rgba(255,255,255,.07); }
+  .stripe.sel { z-index: 2; box-shadow: inset 0 0 0 2px var(--accent); background: rgba(241,201,72,.10); }
+  .stripe .n { position: absolute; left: 50%; top: 6px; transform: translateX(-50%); padding: 1px 6px; border-radius: 2px;
       background: var(--paper); color: var(--paper-ink); font-size: 10px; font-weight: 600; font-variant-numeric: tabular-nums;
-      pointer-events: none; opacity: 0; box-shadow: 0 1px 2px rgba(0,0,0,.4); white-space: nowrap; }
-  .stripe .n::before { content: ""; position: absolute; left: 50%; top: -6px; width: 1px; height: 6px; background: rgba(243,234,216,.8); }
+      pointer-events: none; opacity: 0; white-space: nowrap; }
   .stripe.sel .n { opacity: 1; z-index: 3; }
   .handle { position: absolute; top: 0; bottom: 0; right: -5px; width: 10px; cursor: ew-resize; z-index: 3; touch-action: none; }
-  .handle::after { content: ""; position: absolute; left: 4px; top: 4px; bottom: 4px; width: 2px; background: rgba(255,255,255,.75); border-radius: 1px; opacity: 0; }
+  .handle::after { content: ""; position: absolute; left: 4px; top: 22px; bottom: 6px; width: 2px; background: rgba(255,255,255,.8); border-radius: 1px; opacity: 0; }
   .stripe.sel .handle::after, .stripe:hover .handle::after { opacity: 1; }
 
-  /* ---- skeins ---- */
-  .rack { display: flex; gap: 6px; flex-wrap: wrap; }
-  .skein { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,.25); cursor: pointer; padding: 0; background: var(--c);
-      box-shadow: inset 0 -4px 6px rgba(0,0,0,.25); transition: transform .12s; }
-  .skein:hover { transform: scale(1.12); border-color: #fff; }
-  .skein:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  /* ---- the tray: shuttles and the few controls ---- */
+  .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 28px 18px; background: #1c1815; }
+  .label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+  .label b { color: var(--ink); font-weight: 600; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+  .spacer { flex: 1; }
+  #presets { display: flex; gap: 6px; align-items: center; }
+  /* boat shuttles, each carrying a bobbin of one colour */
+  .rack { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+  .shuttle { background: none; border: 0; padding: 0; cursor: pointer; line-height: 0; transition: transform .12s; }
+  .shuttle:hover { transform: translateY(-3px); }
+  .shuttle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 9px; }
 
   /* ---- controls ---- */
   button.b { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 6px 11px;
@@ -103,7 +88,7 @@
   .card .b:hover { border-color: rgba(42,36,32,.7); }
   .card .b.primary { color: #2a2208; border-color: transparent; }
   @media (max-width: 720px) { .hint { top: 58px; white-space: nowrap; font-size: 11px; } }
-  @media (max-width: 520px) { .row { padding: 0 16px; gap: 10px; } .panel { padding-bottom: 16px; } }
+  @media (max-width: 520px) { .row { padding: 8px 16px 14px; gap: 10px; } .beam { height: 64px; } }
 </style>
 </head>
 <body>
@@ -125,10 +110,11 @@
 </div>
 
 <section class="panel" aria-label="Sett editor">
+  <div class="reed" id="reed"></div>
   <div class="beam-wrap"><div class="beam" id="beam" role="listbox" aria-label="Warp stripes, one repeat after another at the cloth's scale"></div></div>
   <div class="row">
     <span class="label"><b id="count"></b> threads · <b id="stripes"></b> stripes</span>
-    <div class="rack" id="rack" aria-label="Skeins"></div>
+    <div class="rack" id="rack" aria-label="Shuttles"></div>
     <span class="spacer"></span>
     <span class="label" id="presets"></span>
     <button class="b" id="add" title="Add a stripe after the selected one">+ stripe</button>
@@ -212,6 +198,7 @@
 
   // ---------- threads (rebuilt whenever the viewport changes) ----------
   let warps = [], wefts = [], grain, seams;
+  let fellY = Infinity, clothH = 0;   // screen y where the bare warp begins, and the height of woven cloth above the reed
   function build() {
     const vw = cv.clientWidth || window.innerWidth, vh = cv.clientHeight || window.innerHeight;   // the canvas's own laid-out size
     W = Math.max(1, Math.round(vw / zoom)); H = Math.max(1, Math.round(vh / zoom));
@@ -286,12 +273,12 @@
     const r = cv.getBoundingClientRect();
     return [(e.clientX - r.left) * W / r.width, (e.clientY - r.top) * H / r.height];
   };
-  cv.addEventListener('pointermove', e => {
+  window.addEventListener('pointermove', e => {
     const [x, y] = toLocal(e);
     if (!mouse.on) { mouse.px = x; mouse.py = y; }
     mouse.x = x; mouse.y = y; mouse.on = true;
   });
-  cv.addEventListener('pointerleave', () => { mouse.on = false; });
+  document.documentElement.addEventListener('pointerleave', () => { mouse.on = false; });
   cv.addEventListener('pointerdown', e => { const [x, y] = toLocal(e); pluck(x, y); });
   function pluck(x, y) {
     const RP = 70, S = 700;
@@ -364,6 +351,21 @@
     ctx.drawImage(grain, 0, 0, W, H);
     ctx.globalCompositeOperation = 'source-over'; ctx.globalAlpha = 1;
     ctx.drawImage(seams, 0, 0, W, H);
+    // past the reed nothing is woven yet: the same warp threads, bare, over the dark of the pit
+    const zy = fellY / zoom;
+    if (zy < H) {
+      ctx.fillStyle = '#191613'; ctx.fillRect(0, zy, W, H - zy);
+      ctx.save(); ctx.beginPath(); ctx.rect(0, zy, W, H - zy); ctx.clip();
+      ctx.lineWidth = PITCH * 0.42;
+      const k0 = Math.max(0, Math.floor(zy / SEG) - 1);
+      for (const t of warps) {
+        ctx.strokeStyle = t.color;
+        ctx.beginPath(); ctx.moveTo(t.pos + t.d[k0], k0 * SEG);
+        for (let k = k0 + 1; k < t.n; k++) ctx.lineTo(t.pos + t.d[k], k * SEG);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
   }
 
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -456,7 +458,9 @@
   const top = document.getElementById('top'), tctx = top.getContext('2d');
   function startWrap() {
     const sw = cv.clientWidth || window.innerWidth, sh = cv.clientHeight || window.innerHeight;
-    const tex = document.createElement('canvas'); tex.width = cv.width; tex.height = cv.height;
+    draw();   // make sure the snapshot below is of a freshly drawn cloth, even right after a zoom or resize
+    const bh = Math.max(60, Math.min(sh, clothH || sh));   // height of the woven cloth on screen
+    const tex = document.createElement('canvas'); tex.width = cv.width; tex.height = Math.round(bh * dpr);
     tex.getContext('2d').drawImage(cv, 0, 0);
     top.width = cv.width; top.height = cv.height;
     // the card, centred, and the folded scarf that will sit on it
@@ -471,7 +475,7 @@
     }
     const mx = sw * 0.07, my = sh * 0.07, inset = w / 2 + 6;
     const route = roundedRoute([
-      [sw, sh / 2], [mx, sh / 2],                           // a band across the middle, head at the left edge
+      [sw, bh / 2], [mx, bh / 2],                           // a band across the middle, head at the left edge
       [mx, sh - my - inset],                                // south
       [sw - mx - inset, sh - my - inset],                   // east
       [sw - mx - inset, my + inset],                        // north
@@ -483,7 +487,7 @@
     for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) verts.push({ u: i / cols, v: j / rows });
     const off = document.createElement('canvas'); off.width = cv.width; off.height = cv.height;   // the cloth on its own
     const sil = document.createElement('canvas'); sil.width = cv.width; sil.height = cv.height;   // its white silhouette
-    wrap = { tex, off, sil, t0: performance.now(), dur: 3000, verts, cols, rows, sw, sh, route, mx, my, w, lenFinal, card: { x: cx0, y: cy0, w: cw, h: ch, pad, swatchH: passes * spacing } };
+    wrap = { bh, tex, off, sil, t0: performance.now(), dur: 3000, verts, cols, rows, sw, sh, route, mx, my, w, lenFinal, card: { x: cx0, y: cy0, w: cw, h: ch, pad, swatchH: passes * spacing } };
     mode = 'wrap'; mouse.on = false;
     document.body.classList.add('wrapped');
     $('wrapme').textContent = 'back to the loom';
@@ -532,10 +536,10 @@
     let headS, len, wide, front;
     if (t < ZOOM) {
       const k = ease(t / ZOOM);
-      headS = sw - mx * k; len = sw - 2 * mx * k; wide = sh - 2 * my * k; front = 0.22 * k;
+      headS = sw - mx * k; len = sw - 2 * mx * k; wide = w.bh - 2 * my * k; front = 0.22 * k;
     } else {
       const q = (t - ZOOM) / (1 - ZOOM), k = ease(q);
-      headS = lerp(sw - mx, route.L, k); wide = sh - 2 * my; front = 0.22 + q / 0.28 * 1.1;
+      headS = lerp(sw - mx, route.L, k); wide = w.bh - 2 * my; front = 0.22 + q / 0.28 * 1.1;
       len = lerp(sw - 2 * mx, lenFinal, ease(clamp(q / 0.5, 0, 1)));
     }
     const cardIn = ease(clamp((t - 0.6) / 0.3, 0, 1));
@@ -616,7 +620,7 @@
     for (let r = 0; r < repeats; r++) sett.forEach((s, i) => {
       const el = document.createElement('div');
       el.className = 'stripe' + (i === selected ? ' sel' : '');
-      el.style.background = s.c; el.style.width = (s.n * ppt) + 'px';
+      el.style.width = (s.n * ppt) + 'px';   // no fill: the real threads show through from the canvas
       el.dataset.i = i;
       if (r === 0) { el.setAttribute('role', 'option'); el.setAttribute('aria-selected', i === selected); el.tabIndex = 0; }
       else el.setAttribute('aria-hidden', 'true');
@@ -646,6 +650,7 @@
       beam.appendChild(el);
     });
     updateCounts();
+    fellY = beam.getBoundingClientRect().top; clothH = $('reed').getBoundingClientRect().top;
     $('remove').disabled = sett.length <= 2;
     $('add').disabled = sett.length >= MAX_STRIPES;
   }
@@ -657,7 +662,8 @@
 
   for (const c of SKEINS) {
     const b = document.createElement('button');
-    b.className = 'skein'; b.style.setProperty('--c', c); b.title = c; b.setAttribute('aria-label', 'dye selected stripe ' + c);
+    b.className = 'shuttle'; b.title = c; b.setAttribute('aria-label', 'dye selected stripe ' + c);
+    b.innerHTML = `<svg viewBox="0 0 18 56" width="21" height="66" aria-hidden="true"><path d="M9 0C15 10 17 18 17 28C17 38 15 46 9 56C3 46 1 38 1 28C1 18 3 10 9 0Z" fill="#9a7a58"/><path d="M9 3C13 11 15 19 15 28C15 37 13 45 9 53" fill="none" stroke="rgba(0,0,0,.18)"/><rect x="5" y="14" width="8" height="28" rx="3" fill="${c}"/><path d="M5 19h8M5 24h8M5 29h8M5 34h8M5 38h8" stroke="rgba(0,0,0,.22)"/></svg>`;
     b.addEventListener('click', () => { sett[selected].c = c; changed(); });
     rack.appendChild(b);
   }

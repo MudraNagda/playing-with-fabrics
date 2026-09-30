@@ -8,9 +8,9 @@ Small experiments in simulating cloth in the browser. Each folder is one standal
 
 Every vertical warp and horizontal weft thread is its own physics line rendered as a plain weave. Hover to part the threads, click to pluck them, and they spring back with tension and damping while a faint breeze keeps the cloth swaying at rest. Threads near the stitched pleat seams are stiffer.
 
-**Design your own.** The wooden bar along the bottom is the loom's warp beam. The sett is wound onto it at the cloth's own scale, repeat after repeat, so every stripe on the beam sits directly below the same stripe in the cloth and is exactly as wide. Zooming the cloth zooms the beam with it. The sett is the sequence of colours and thread counts that a weaver winds onto the warp beam. The same sett runs across and down, which is what makes a madras check.
+**Design your own.** The bottom of the screen is the loom as a weaver sees it: the woven cloth, then the reed, then the bare warp threads that have not been woven yet, running back over the dark of the pit. Those bare threads are the editor. They are the same simulated threads as the cloth, so each stripe sits directly below its stripe in the weave at exactly the same width, and they part under the cursor too. Below them lie the boat shuttles, one bobbin per colour.
 
-- Tap a stripe, then tap a skein to dye it.
+- Tap a stripe in the bare warp, then tap a shuttle to dye it.
 - Drag a stripe's right edge to change its thread count. Shift + arrow keys do the same from the keyboard.
 - `+ stripe` duplicates the selected stripe; `remove` deletes it.
 - `Share link` copies a URL with the whole sett encoded in it, so nothing is stored anywhere.
