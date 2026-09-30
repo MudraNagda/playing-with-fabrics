@@ -9,21 +9,24 @@
 <style>
   :root { --panel: #f4f1ec; --ink: #2a2420; --dim: #7a7166; --line: rgba(42,36,32,.28); --accent: #6e3b2c; --frame: #6e3b2c; --frame-dark: #4f281d;
           --paper: #f3ead8; --paper-ink: #3b2a1a; --serif: "Fraunces", "Iowan Old Style", Georgia, serif; }
-  html, body { margin: 0; height: 100%; background: #d9d4c4; color: var(--ink); }
-  body { overflow: hidden; font: 13px/1.4 system-ui, -apple-system, sans-serif; }
-  .wrap { position: fixed; inset: 0; }
+  html, body { margin: 0; height: 100%; background: var(--panel); color: var(--ink); }
+  body { overflow: hidden; font: 13px/1.4 system-ui, -apple-system, sans-serif; --padx: clamp(14px, 7vw, 120px); }
+  /* the page is a column: air at the top for the controls, the loom, then the floor with the cones */
+  .stage { position: fixed; inset: 0; display: flex; flex-direction: column; padding: 68px var(--padx) 0; box-sizing: border-box; }
+  .wrap { position: relative; flex: 1; min-height: 0; }
   canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; touch-action: none; }
-  .hint { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; padding: 5px 12px; border-radius: 6px;
-      background: var(--panel); color: var(--ink); font-size: 12px; letter-spacing: .04em; pointer-events: none; box-shadow: 0 1px 5px rgba(0,0,0,.28); }
+  .hint { position: fixed; left: 50%; top: 25px; transform: translateX(-50%); margin: 0; color: var(--dim); font-size: 12px; letter-spacing: .04em;
+      pointer-events: none; white-space: nowrap; }
 
   /* ---- the warping frame: cloth above, then painted frame bars with the warp gathered into bands between them ---- */
-  .panel { position: fixed; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
+  .panel { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
   .reed, .bar { background: var(--frame); border-bottom: 2px solid var(--frame-dark); box-sizing: border-box; pointer-events: none; }
-  .reed { height: 14px; box-shadow: 0 3px 5px rgba(0,0,0,.22); position: relative; z-index: 4; }
-  .bar { height: 9px; }
+  .reed { height: 10px; position: relative; z-index: 4; margin: 0 -10px; border-radius: 2px; }   /* bars overhang the warp a little, like a frame */
+  .bar { height: 8px; margin: 0 -10px; border-radius: 2px; }
   /* the warp itself is drawn on the canvas as real threads; these are the hit areas over it */
   .beam-wrap { position: relative; overflow: hidden; }
-  .beam { position: relative; display: flex; height: 96px; touch-action: none; }
+  .panel { overflow: visible; }
+  .beam { position: relative; display: flex; height: clamp(120px, 24vh, 210px); touch-action: none; }
   .stripe { position: relative; height: 100%; cursor: pointer; flex: none; box-sizing: border-box; }
   .stripe:hover { background: rgba(42,36,32,.06); }
   .stripe.sel { z-index: 2; box-shadow: inset 0 0 0 2px var(--frame); background: rgba(110,59,44,.08); }
@@ -36,7 +39,7 @@
   .stripe.sel .handle::after, .stripe:hover .handle::after { opacity: 1; }
 
   /* ---- the floor: yarn cones and the few controls ---- */
-  .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 10px 28px 18px; background: var(--panel); }
+  .row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 20px 0 30px; }
   .label { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
   .label b { color: var(--ink); font-weight: 600; letter-spacing: 0; font-variant-numeric: tabular-nums; }
   .spacer { flex: 1; }
@@ -60,9 +63,9 @@
   .toast { position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%); background: var(--accent); color: #fff;
       padding: 8px 14px; border-radius: 6px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 8; }
   .toast.show { opacity: 1; }
-  .corner { position: fixed; top: 12px; display: flex; align-items: center; gap: 4px; background: var(--panel); color: var(--ink);
-      border-radius: 6px; padding: 3px; box-shadow: 0 1px 5px rgba(0,0,0,.28); }
-  .corner.left { left: 12px; } .corner.right { right: 12px; z-index: 7; }
+  .corner { position: fixed; top: 16px; display: flex; align-items: center; gap: 4px; color: var(--ink);
+      border: 1px solid var(--line); border-radius: 6px; padding: 2px; }
+  .corner.left { left: var(--padx); } .corner.right { right: var(--padx); z-index: 7; border: 0; padding: 0; }
   .corner button { background: transparent; color: var(--ink); border: 0; border-radius: 4px; width: 30px; height: 30px; font: inherit;
       font-size: 16px; cursor: pointer; line-height: 1; }
   .corner button:hover { background: rgba(42,36,32,.08); }
@@ -71,10 +74,10 @@
   .corner .wrapme { width: auto; padding: 0 14px; font-size: 12px; letter-spacing: .04em; text-transform: lowercase; background: var(--accent); color: #fff; font-weight: 600; }
   .corner .wrapme:hover { background: #854a38; }
   /* while wrapped: the loom stays on screen under a half-transparent veil, and the card is drawn on a canvas above it */
-  .veil { position: fixed; inset: 0; background: rgba(236,229,214,.75); display: none; z-index: 4; }
+  .veil { position: fixed; inset: 0; background: rgba(244,241,236,.75); display: none; z-index: 4; }
   .top { position: fixed; inset: 0; width: 100%; height: 100%; display: none; pointer-events: none; z-index: 5; }
   body.wrapped .veil, body.wrapped .top { display: block; }
-  body.wrapped .panel, body.wrapped .hint, body.wrapped .corner.left { pointer-events: none; }
+  body.wrapped .panel, body.wrapped .row, body.wrapped .hint, body.wrapped .corner.left { pointer-events: none; }
   .card { position: fixed; box-sizing: border-box; padding: 14px 22px 18px; display: flex; flex-direction: column; gap: 6px; color: #2a2420;
       opacity: 0; transition: opacity .35s; pointer-events: none; z-index: 6; }
   .card.show { opacity: 1; pointer-events: auto; }
@@ -87,11 +90,29 @@
   .card .b:hover { border-color: rgba(42,36,32,.7); }
   .card .b.primary { color: #fff; border-color: transparent; }
   @media (max-width: 720px) { .hint { top: 58px; white-space: nowrap; font-size: 11px; } }
-  @media (max-width: 520px) { .row { padding: 8px 16px 14px; gap: 10px; } .beam { height: 72px; } }
+  @media (max-width: 520px) { .row { padding: 14px 0 18px; gap: 10px; } .beam { height: 110px; } .stage { padding-top: 96px; } }
 </style>
 </head>
 <body>
-<div class="wrap"><canvas id="c"></canvas></div>
+<div class="stage">
+  <div class="wrap">
+    <canvas id="c"></canvas>
+    <section class="panel" aria-label="Sett editor">
+      <div class="reed" id="reed"></div>
+      <div class="beam-wrap"><div class="beam" id="beam" role="listbox" aria-label="Warp stripes, one repeat after another at the cloth's scale"></div></div>
+      <div class="bar"></div>
+    </section>
+  </div>
+  <div class="row">
+    <span class="label"><b id="count"></b> threads · <b id="stripes"></b> stripes</span>
+    <div class="rack" id="rack" aria-label="Yarn cones"></div>
+    <span class="spacer"></span>
+    <span class="label" id="presets"></span>
+    <button class="b" id="add" title="Add a stripe after the selected one">+ stripe</button>
+    <button class="b" id="remove" title="Remove the selected stripe">remove</button>
+    <button class="b primary" id="share">Share link</button>
+  </div>
+</div>
 <p class="hint">hover to part the threads · click to pluck</p>
 <div class="corner left" aria-label="Zoom">
   <button id="zout" title="Zoom out" aria-label="Zoom out">−</button>
@@ -108,20 +129,6 @@
   </div>
 </div>
 
-<section class="panel" aria-label="Sett editor">
-  <div class="reed" id="reed"></div>
-  <div class="beam-wrap"><div class="beam" id="beam" role="listbox" aria-label="Warp stripes, one repeat after another at the cloth's scale"></div></div>
-  <div class="bar"></div>
-  <div class="row">
-    <span class="label"><b id="count"></b> threads · <b id="stripes"></b> stripes</span>
-    <div class="rack" id="rack" aria-label="Yarn cones"></div>
-    <span class="spacer"></span>
-    <span class="label" id="presets"></span>
-    <button class="b" id="add" title="Add a stripe after the selected one">+ stripe</button>
-    <button class="b" id="remove" title="Remove the selected stripe">remove</button>
-    <button class="b primary" id="share">Share link</button>
-  </div>
-</section>
 <div class="toast" id="toast">Link copied</div>
 <div class="veil"></div>
 <canvas class="top" id="top"></canvas>
@@ -269,7 +276,11 @@
   }
   build();
   let resizeTimer = 0;
-  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (mode === 'wrap') endWrap(); build(); renderBeam(); }, 120); });
+  let lastBox = '';
+  new ResizeObserver(() => {
+    const box = cv.clientWidth + 'x' + cv.clientHeight; if (box === lastBox) return; lastBox = box;
+    clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { if (mode === 'wrap') endWrap(); build(); renderBeam(); }, 120);
+  }).observe(cv);
 
   // ---------- pointer on the cloth ----------
   const mouse = { x: 0, y: 0, px: 0, py: 0, vx: 0, vy: 0, on: false };
@@ -357,8 +368,8 @@
     ctx.drawImage(seams, 0, 0, W, H);
     // below the frame bar nothing is woven: the same warp threads, each stripe gathered into a band as on a warping frame
     const beamEl = document.getElementById('beam'), reedEl = document.getElementById('reed');
-    if (beamEl) { fellY = beamEl.getBoundingClientRect().top; clothH = reedEl.getBoundingClientRect().top; }   // measured live: the tray can reflow
     const cr = cv.getBoundingClientRect();
+    if (beamEl) { fellY = beamEl.getBoundingClientRect().top; clothH = reedEl.getBoundingClientRect().top - cr.top; }   // measured live: the floor can reflow
     const zy = (fellY - cr.top) * H / (cr.height || 1);   // screen y -> fabric y through the canvas's own box
     if (zy < H) {
       ctx.fillStyle = '#dedad1'; ctx.fillRect(0, zy, W, H - zy);
@@ -469,12 +480,14 @@
 
   const top = document.getElementById('top'), tctx = top.getContext('2d');
   function startWrap() {
-    const sw = cv.clientWidth || window.innerWidth, sh = cv.clientHeight || window.innerHeight;
+    document.body.classList.add('wrapped');   // shows the overlay canvas, so its real box can be measured
+    const tr = top.getBoundingClientRect(), sw = tr.width || window.innerWidth, sh = tr.height || window.innerHeight;   // the whole page, as laid out
     draw();   // make sure the snapshot below is of a freshly drawn cloth, even right after a zoom or resize
-    const bh = Math.max(60, Math.min(sh, clothH || sh));   // height of the woven cloth on screen
+    const cr0 = cv.getBoundingClientRect(), ox = cr0.left, oy = cr0.top, cwid = cr0.width;         // where the cloth sits on the page
+    const bh = Math.max(60, Math.min(cr0.height, clothH || cr0.height));   // height of the woven cloth on screen
     const tex = document.createElement('canvas'); tex.width = cv.width; tex.height = Math.round(bh * dpr);
     tex.getContext('2d').drawImage(cv, 0, 0);
-    top.width = cv.width; top.height = cv.height;
+    top.width = Math.round(sw * dpr); top.height = Math.round(sh * dpr);
     // the card, centred, and the folded scarf that will sit on it
     const cw = Math.min(sw - 32, 380), pad = 20, passes = 4, gap = 1.25, textH = 128;
     const swatchH = Math.min(cw * 0.74, sh - 32 - pad - textH), ch = pad + swatchH + textH, cx0 = (sw - cw) / 2, cy0 = (sh - ch) / 2;
@@ -487,8 +500,8 @@
     }
     const mx = sw * 0.07, my = sh * 0.07, inset = w / 2 + 6;
     const route = roundedRoute([
-      [sw, bh / 2], [mx, bh / 2],                           // a band across the middle, head at the left edge
-      [mx, sh - my - inset],                                // south
+      [ox + cwid, oy + bh / 2], [ox + mx, oy + bh / 2],                           // a band across the middle, head at the left edge
+      [ox + mx, sh - my - inset],                           // south
       [sw - mx - inset, sh - my - inset],                   // east
       [sw - mx - inset, my + inset],                        // north
       [px1, my + inset],                                    // west along the top
@@ -497,9 +510,9 @@
     const lenFinal = roundedRoute(zig, spacing / 2).L - w * 0.7;   // tail ends just inside the first pass
     const cols = 64, rows = 6, verts = [];
     for (let j = 0; j <= rows; j++) for (let i = 0; i <= cols; i++) verts.push({ u: i / cols, v: j / rows });
-    const off = document.createElement('canvas'); off.width = cv.width; off.height = cv.height;   // the cloth on its own
-    const sil = document.createElement('canvas'); sil.width = cv.width; sil.height = cv.height;   // its white silhouette
-    wrap = { bh, tex, off, sil, t0: performance.now(), dur: 3000, verts, cols, rows, sw, sh, route, mx, my, w, lenFinal, card: { x: cx0, y: cy0, w: cw, h: ch, pad, swatchH: passes * spacing } };
+    const off = document.createElement('canvas'); off.width = top.width; off.height = top.height;   // the cloth on its own
+    const sil = document.createElement('canvas'); sil.width = top.width; sil.height = top.height;   // its white silhouette
+    wrap = { bh, cwid, tex, off, sil, t0: performance.now(), dur: 3000, verts, cols, rows, sw, sh, route, mx, my, w, lenFinal, card: { x: cx0, y: cy0, w: cw, h: ch, pad, swatchH: passes * spacing } };
     mode = 'wrap'; mouse.on = false;
     document.body.classList.add('wrapped');
     $('wrapme').textContent = 'back to the loom';
@@ -548,11 +561,11 @@
     let headS, len, wide, front;
     if (t < ZOOM) {
       const k = ease(t / ZOOM);
-      headS = sw - mx * k; len = sw - 2 * mx * k; wide = w.bh - 2 * my * k; front = 0.22 * k;
+      headS = w.cwid - mx * k; len = w.cwid - 2 * mx * k; wide = w.bh - 2 * my * k; front = 0.22 * k;
     } else {
       const q = (t - ZOOM) / (1 - ZOOM), k = ease(q);
-      headS = lerp(sw - mx, route.L, k); wide = w.bh - 2 * my; front = 0.22 + q / 0.28 * 1.1;
-      len = lerp(sw - 2 * mx, lenFinal, ease(clamp(q / 0.5, 0, 1)));
+      headS = lerp(w.cwid - mx, route.L, k); wide = w.bh - 2 * my; front = 0.22 + q / 0.28 * 1.1;
+      len = lerp(w.cwid - 2 * mx, lenFinal, ease(clamp(q / 0.5, 0, 1)));
     }
     const cardIn = ease(clamp((t - 0.6) / 0.3, 0, 1));
     drawCard(cardIn);
@@ -662,7 +675,7 @@
       beam.appendChild(el);
     });
     updateCounts();
-    fellY = beam.getBoundingClientRect().top; clothH = $('reed').getBoundingClientRect().top;
+    fellY = beam.getBoundingClientRect().top; clothH = $('reed').getBoundingClientRect().top - cv.getBoundingClientRect().top;
     $('remove').disabled = sett.length <= 2;
     $('add').disabled = sett.length >= MAX_STRIPES;
   }
