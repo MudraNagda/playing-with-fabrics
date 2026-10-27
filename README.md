@@ -21,6 +21,14 @@ Every vertical warp and horizontal weft thread is its own physics line rendered 
 
 Presets in the top right of the panel give you a starting point: the original Chennai swatch, an indigo check, and a red and navy "bleeding madras".
 
+## Kutch work
+
+`kutch/index.html`: a Kutch embroidery medallion from Kachchh, Gujarat, stitched on screen one stitch at a time.
+
+Every stitch is its own short strand of floss drawn on a canvas, with a shadow and a sheen. A needle runs through the design in working order, centre first and the red interlaced border last, laying down about three thousand stitches in nine seconds. Hover to ruffle the stitches, click to pluck them, and they spring back.
+
+The motifs are built from four stitch types: buttonhole wheels, satin-stitched disks, open cross-stitch squares, and the four-armed Kutch cross whose arms meet their neighbours to form the border lattice. Click a motif, then a skein, to re-thread it in another colour. `Share link` puts every motif's colour in the URL. `stitch again` replays the needle.
+
 ## Running
 
 Open any `index.html` directly, or serve the folder:
